@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Data and generated indexes
+data/processed/
+vector_store/
+chroma_db/
+qdrant_data/
+qdrant_storage/
+*.faiss
+*.index
+
+# Logs
+*.log
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -2,8 +2,16 @@
 
 > **Ancient Wisdom. Infinite Understanding.**  
 > A royal, source-grounded multimodal Bhagavad Gita intelligence platform powered by dense retrieval, conversational neighbor expansion, and a 3D Kurukshetra cinematic diorama.
+<div align="center">
+  <img
+    src="https://github.com/user-attachments/assets/a0311c35-c8bf-440a-b65b-ba2e0ad0a1e4"
+    alt="VYOM Logo"
+    width="220"
+  />
+</div>
 
 ---
+
 
 ## 🏛️ System Architecture
 

@@ -1,30 +1,136 @@
-# Python
-__pycache__/
-*.pyc
-*.py[cod]
-.venv/
-venv/
-.pytest_cache/
+# ==============================================================================
+# VYOM — Root .gitignore
+# ==============================================================================
 
-# Data and generated indexes
+# Node / Frontend Dependencies & Builds
+node_modules/
+*/node_modules/
+frontend/node_modules/
+dist/
+*/dist/
+frontend/dist/
+dist-ssr/
+*.local
+.vite/
+.output/
+
+# Node logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Python & Virtual Environments
+__pycache__/
+*/__pycache__/
+*/*/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+*/.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Data, Vector Stores & Processed Datasets
 data/processed/
+data/raw/
+backend/data/processed/
+backend/data/raw/
 vector_store/
 chroma_db/
 qdrant_data/
+backend/qdrant_data/
 qdrant_storage/
+backend/qdrant_storage/
 *.faiss
 *.index
 
-# Logs
-*.log
+# Machine Learning Models & Heavy Binaries
+*.pt
+*.pth
+*.bin
+*.onnx
+*.safetensors
 
-# Secrets and local configuration
+# Logs & Diagnostics
+*.log
+logs/
+*/logs/
+
+# Secrets, API Keys & Local Configuration
 .env
 .env.*
-!.env.example
+*.env
+backend/.env
+backend/.env.*
+frontend/.env
+frontend/.env.*
+backend/start.txt
+*.pem
+*.key
 
-# Editors and OS
+# Do NOT ignore environment templates
+!.env.example
+!backend/.env.example
+!frontend/.env.example
+!**/.env.example
+
+# IDE & Editor Configurations
 .vscode/
+!.vscode/extensions.json
 .idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.project
+.settings/
+
+# Operating System Files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+
+# Frontend tool state and local configuration
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/npm-debug.log*
+frontend/.env
+frontend/.env.local
+
+# Local database/index caches
+*.db
+*.sqlite
+*.sqlite3
+index_cache/
+backend/index_cache/
+backend/data/processed/embeddings/
+
+# Raw/original media must stay outside the public asset directory
+frontend/public/**/*-raw.*
+frontend/public/**/*_raw.*
+frontend/public/**/*-original.*
+frontend/public/**/*_original.*
+frontend/public/**/*.bak
+
+# Git ignore rules cannot filter by byte size; run
+# `node frontend/scripts/check-public-media.mjs` before staging public media.

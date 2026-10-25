@@ -1,0 +1,1510 @@
+{
+  "What does the Gita say about acting without attachment to results?": {
+    "q_num": 1,
+    "type": "conceptual",
+    "old_gold": [
+      "2.47",
+      "2.48",
+      "3.19",
+      "18.9"
+    ],
+    "systems_by_verse": {
+      "3.25": [
+        "bge-m3_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "3.18": [
+        "bge-m3_dense"
+      ],
+      "18.9": [
+        "bge-m3_dense"
+      ],
+      "3.9": [
+        "bge-m3_dense"
+      ],
+      "4.14": [
+        "bge-base_dense"
+      ],
+      "3.19": [
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "5.10": [
+        "bge-base_dense"
+      ],
+      "2.47": [
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "2.48": [],
+      "18.23": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_ea"
+      ],
+      "18.6": [
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "4.20": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ]
+    },
+    "is_old_gold": {
+      "3.25": false,
+      "3.18": false,
+      "18.9": true,
+      "3.9": false,
+      "4.14": false,
+      "3.19": true,
+      "5.10": false,
+      "2.47": true,
+      "2.48": true,
+      "18.23": false,
+      "18.6": false,
+      "4.20": false
+    }
+  },
+  "How do I control a restless, wandering mind?": {
+    "q_num": 2,
+    "type": "conceptual",
+    "old_gold": [
+      "6.35",
+      "6.34"
+    ],
+    "systems_by_verse": {
+      "6.15": [
+        "bge-m3_dense"
+      ],
+      "5.28": [
+        "bge-m3_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "2.44": [
+        "bge-base_dense"
+      ],
+      "6.34": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "6.12": [
+        "bge-base_dense"
+      ],
+      "6.26": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "6.33": [
+        "bge-base_dense"
+      ],
+      "17.16": [
+        "bge-m3_hybrid_ea"
+      ],
+      "6.35": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "17.14": [
+        "bge-m3_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ]
+    },
+    "is_old_gold": {
+      "6.15": false,
+      "5.28": false,
+      "2.44": false,
+      "6.34": true,
+      "6.12": false,
+      "6.26": false,
+      "6.33": false,
+      "17.16": false,
+      "6.35": true,
+      "17.14": false
+    }
+  },
+  "Is the soul ever born or does it ever die?": {
+    "q_num": 3,
+    "type": "conceptual",
+    "old_gold": [
+      "2.20",
+      "2.23"
+    ],
+    "systems_by_verse": {
+      "2.26": [
+        "bge-m3_dense",
+        "bge-base_dense"
+      ],
+      "8.6": [
+        "bge-m3_dense"
+      ],
+      "18.37": [
+        "bge-base_dense"
+      ],
+      "13.3": [
+        "bge-m3_hybrid_ea"
+      ],
+      "13.22": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "14.15": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw"
+      ],
+      "16.20": [
+        "bge-m3_hybrid_sw"
+      ],
+      "2.20": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "15.7": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "2.12": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "2.23": [],
+      "2.27": [
+        "bge-base_dense"
+      ],
+      "4.9": [
+        "bge-m3_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ]
+    },
+    "is_old_gold": {
+      "2.26": false,
+      "8.6": false,
+      "18.37": false,
+      "13.3": false,
+      "13.22": false,
+      "14.15": false,
+      "16.20": false,
+      "2.20": true,
+      "15.7": false,
+      "2.12": false,
+      "2.23": true,
+      "2.27": false,
+      "4.9": false
+    }
+  },
+  "Why should I do my own duty even if I do it imperfectly?": {
+    "q_num": 4,
+    "type": "conceptual",
+    "old_gold": [
+      "3.35",
+      "18.47"
+    ],
+    "systems_by_verse": {
+      "18.48": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "18.47": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "12.10": [
+        "bge-base_dense"
+      ],
+      "3.35": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "3.8": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "18.10": [
+        "bge-m3_dense",
+        "bge-m3_hybrid"
+      ],
+      "18.45": [
+        "bge-m3_dense",
+        "bge-base_dense"
+      ],
+      "2.31": [
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ]
+    },
+    "is_old_gold": {
+      "18.48": false,
+      "18.47": true,
+      "12.10": false,
+      "3.35": true,
+      "3.8": false,
+      "18.10": false,
+      "18.45": false,
+      "2.31": false
+    }
+  },
+  "How should one stay balanced in pleasure and pain?": {
+    "q_num": 5,
+    "type": "conceptual",
+    "old_gold": [
+      "2.14",
+      "2.15"
+    ],
+    "systems_by_verse": {
+      "2.14": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "14.24": [
+        "bge-m3_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_ea"
+      ],
+      "6.7": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "2.15": [
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "2.38": [
+        "bge-base_dense"
+      ],
+      "18.38": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "13.3": [
+        "bge-m3_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "5.19": [
+        "bge-base_dense"
+      ]
+    },
+    "is_old_gold": {
+      "2.14": true,
+      "14.24": false,
+      "6.7": false,
+      "2.15": true,
+      "2.38": false,
+      "18.38": false,
+      "13.3": false,
+      "5.19": false
+    }
+  },
+  "Can I be freed from sin and sorrow by surrendering to God?": {
+    "q_num": 6,
+    "type": "conceptual",
+    "old_gold": [
+      "18.66"
+    ],
+    "systems_by_verse": {
+      "9.28": [
+        "bge-m3_dense"
+      ],
+      "6.22": [
+        "bge-m3_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "2.33": [
+        "bge-base_dense"
+      ],
+      "3.13": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "18.66": [
+        "bge-m3_dense",
+        "bge-base_dense"
+      ],
+      "2.38": [
+        "bge-m3_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "17.27": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "4.21": [
+        "bge-base_dense"
+      ],
+      "18.62": [
+        "bge-base_dense"
+      ],
+      "7.28": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ]
+    },
+    "is_old_gold": {
+      "9.28": false,
+      "6.22": false,
+      "2.33": false,
+      "3.13": false,
+      "18.66": true,
+      "2.38": false,
+      "17.27": false,
+      "4.21": false,
+      "18.62": false,
+      "7.28": false
+    }
+  },
+  "What are the three qualities of nature that bind a person?": {
+    "q_num": 7,
+    "type": "conceptual",
+    "old_gold": [
+      "14.5",
+      "14.6",
+      "14.7",
+      "14.8"
+    ],
+    "systems_by_verse": {
+      "18.40": [
+        "bge-base_dense",
+        "bge-m3_hybrid"
+      ],
+      "14.6": [],
+      "16.1": [
+        "bge-m3_dense"
+      ],
+      "2.45": [
+        "bge-m3_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "3.5": [
+        "bge-m3_hybrid_sw"
+      ],
+      "17.2": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "16.3": [
+        "bge-m3_dense"
+      ],
+      "7.13": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "14.8": [],
+      "14.7": [],
+      "13.22": [
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "14.5": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "4.6": [
+        "bge-base_dense"
+      ]
+    },
+    "is_old_gold": {
+      "18.40": false,
+      "14.6": true,
+      "16.1": false,
+      "2.45": false,
+      "3.5": false,
+      "17.2": false,
+      "16.3": false,
+      "7.13": false,
+      "14.8": true,
+      "14.7": true,
+      "13.22": false,
+      "14.5": true,
+      "4.6": false
+    }
+  },
+  "What kind of devotee is dear to the Lord?": {
+    "q_num": 8,
+    "type": "conceptual",
+    "old_gold": [
+      "12.13",
+      "12.14",
+      "12.15",
+      "12.16",
+      "12.17",
+      "12.18",
+      "12.19"
+    ],
+    "systems_by_verse": {
+      "12.17": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "12.14": [
+        "bge-m3_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "12.15": [
+        "bge-base_dense"
+      ],
+      "10.9": [
+        "bge-base_dense"
+      ],
+      "12.20": [
+        "bge-m3_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "12.18": [],
+      "11.36": [
+        "bge-base_dense"
+      ],
+      "12.19": [],
+      "7.18": [
+        "bge-m3_dense",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "12.13": [],
+      "12.16": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "7.17": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_ea"
+      ]
+    },
+    "is_old_gold": {
+      "12.17": true,
+      "12.14": true,
+      "12.15": true,
+      "10.9": false,
+      "12.20": false,
+      "12.18": true,
+      "11.36": false,
+      "12.19": true,
+      "7.18": false,
+      "12.13": true,
+      "12.16": true,
+      "7.17": false
+    }
+  },
+  "What is the first verse of the Gita?": {
+    "q_num": 9,
+    "type": "lookup",
+    "old_gold": [
+      "1.1"
+    ],
+    "systems_by_verse": {
+      "1.1": [],
+      "8.28": [
+        "bge-base_dense"
+      ],
+      "2.11": [
+        "bge-m3_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_ea"
+      ],
+      "1.21": [
+        "bge-base_dense"
+      ],
+      "18.73": [
+        "bge-m3_dense"
+      ],
+      "9.3": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "13.1": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "11.55": [
+        "bge-m3_dense"
+      ],
+      "17.24": [
+        "bge-base_dense"
+      ],
+      "18.63": [
+        "bge-base_dense"
+      ],
+      "1.8": [
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "11.37": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "3.41": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "18.68": [
+        "bge-m3_dense"
+      ]
+    },
+    "is_old_gold": {
+      "1.1": true,
+      "8.28": false,
+      "2.11": false,
+      "1.21": false,
+      "18.73": false,
+      "9.3": false,
+      "13.1": false,
+      "11.55": false,
+      "17.24": false,
+      "18.63": false,
+      "1.8": false,
+      "11.37": false,
+      "3.41": false,
+      "18.68": false
+    }
+  },
+  "Give me the verse where Krishna compares changing bodies to childhood, youth and old age.": {
+    "q_num": 10,
+    "type": "lookup",
+    "old_gold": [
+      "2.13"
+    ],
+    "systems_by_verse": {
+      "13.9": [
+        "bge-m3_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "2.13": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "2.26": [
+        "bge-base_dense"
+      ],
+      "2.18": [
+        "bge-base_dense"
+      ],
+      "4.8": [
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "14.20": [
+        "bge-m3_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "2.20": [
+        "bge-m3_dense"
+      ],
+      "7.29": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "2.12": [
+        "bge-base_dense"
+      ],
+      "11.42": [
+        "bge-m3_dense"
+      ]
+    },
+    "is_old_gold": {
+      "13.9": false,
+      "2.13": true,
+      "2.26": false,
+      "2.18": false,
+      "4.8": false,
+      "14.20": false,
+      "2.20": false,
+      "7.29": false,
+      "2.12": false,
+      "11.42": false
+    }
+  },
+  "What does the word sthitaprajna mean?": {
+    "q_num": 11,
+    "type": "word_meaning",
+    "old_gold": [
+      "2.54",
+      "2.55",
+      "2.56",
+      "2.57",
+      "2.58"
+    ],
+    "systems_by_verse": {
+      "1.10": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "2.56": [],
+      "11.39": [
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "2.55": [],
+      "18.10": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "13.8": [
+        "bge-m3_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "10.34": [
+        "bge-base_dense"
+      ],
+      "18.37": [
+        "bge-m3_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_ea"
+      ],
+      "13.2": [
+        "bge-base_dense"
+      ],
+      "11.12": [
+        "bge-base_dense"
+      ],
+      "2.57": [],
+      "2.58": [],
+      "3.14": [
+        "bge-m3_dense"
+      ],
+      "17.26": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "3.27": [
+        "bge-m3_dense"
+      ],
+      "17.25": [
+        "bge-base_dense"
+      ],
+      "2.54": []
+    },
+    "is_old_gold": {
+      "1.10": false,
+      "2.56": true,
+      "11.39": false,
+      "2.55": true,
+      "18.10": false,
+      "13.8": false,
+      "10.34": false,
+      "18.37": false,
+      "13.2": false,
+      "11.12": false,
+      "2.57": true,
+      "2.58": true,
+      "3.14": false,
+      "17.26": false,
+      "3.27": false,
+      "17.25": false,
+      "2.54": true
+    }
+  },
+  "In what sense does the Gita use the word yoga, as in 'yoga is skill in action'?": {
+    "q_num": 12,
+    "type": "word_meaning",
+    "old_gold": [
+      "2.50",
+      "2.48"
+    ],
+    "systems_by_verse": {
+      "6.4": [
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "2.40": [
+        "bge-m3_hybrid"
+      ],
+      "6.1": [
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "11.55": [
+        "bge-m3_dense"
+      ],
+      "5.1": [
+        "bge-base_dense"
+      ],
+      "2.49": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "2.38": [
+        "bge-m3_hybrid_sw"
+      ],
+      "2.48": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid_sw"
+      ],
+      "2.50": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "4.18": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "6.3": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea"
+      ]
+    },
+    "is_old_gold": {
+      "6.4": false,
+      "2.40": false,
+      "6.1": false,
+      "11.55": false,
+      "5.1": false,
+      "2.49": false,
+      "2.38": false,
+      "2.48": true,
+      "2.50": true,
+      "4.18": false,
+      "6.3": false
+    }
+  },
+  "What does Om Tat Sat mean?": {
+    "q_num": 13,
+    "type": "word_meaning",
+    "old_gold": [
+      "17.23",
+      "17.24"
+    ],
+    "systems_by_verse": {
+      "17.26": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "11.37": [
+        "bge-m3_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "17.24": [],
+      "17.25": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "18.23": [
+        "bge-base_dense"
+      ],
+      "17.27": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "17.23": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ]
+    },
+    "is_old_gold": {
+      "17.26": false,
+      "11.37": false,
+      "17.24": true,
+      "17.25": false,
+      "18.23": false,
+      "17.27": false,
+      "17.23": true
+    }
+  },
+  "What does the Gita mean by maya?": {
+    "q_num": 14,
+    "type": "word_meaning",
+    "old_gold": [
+      "7.14"
+    ],
+    "systems_by_verse": {
+      "15.16": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "18.68": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "18.73": [
+        "bge-m3_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_ea"
+      ],
+      "7.15": [
+        "bge-base_dense"
+      ],
+      "7.14": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "7.25": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "4.6": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea_sw"
+      ]
+    },
+    "is_old_gold": {
+      "15.16": false,
+      "18.68": false,
+      "18.73": false,
+      "7.15": false,
+      "7.14": true,
+      "7.25": false,
+      "4.6": false
+    }
+  },
+  "Is renunciation of action better than selfless action?": {
+    "q_num": 15,
+    "type": "multi_verse",
+    "old_gold": [
+      "5.1",
+      "5.2",
+      "3.3"
+    ],
+    "systems_by_verse": {
+      "18.7": [
+        "bge-base_dense"
+      ],
+      "3.4": [
+        "bge-m3_dense",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "5.2": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "3.3": [],
+      "18.5": [
+        "bge-m3_dense"
+      ],
+      "18.8": [
+        "bge-m3_hybrid"
+      ],
+      "18.9": [
+        "bge-base_dense"
+      ],
+      "18.11": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "12.12": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "5.1": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ]
+    },
+    "is_old_gold": {
+      "18.7": false,
+      "3.4": false,
+      "5.2": true,
+      "3.3": true,
+      "18.5": false,
+      "18.8": false,
+      "18.9": false,
+      "18.11": false,
+      "12.12": false,
+      "5.1": true
+    }
+  },
+  "How does the Gita describe the proper place and posture for meditation?": {
+    "q_num": 16,
+    "type": "multi_verse",
+    "old_gold": [
+      "6.10",
+      "6.11",
+      "6.12",
+      "6.13",
+      "6.14"
+    ],
+    "systems_by_verse": {
+      "2.61": [
+        "bge-base_dense"
+      ],
+      "6.13": [
+        "bge-m3_dense",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "2.66": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_ea"
+      ],
+      "13.25": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "6.14": [
+        "bge-m3_dense"
+      ],
+      "6.19": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea"
+      ],
+      "6.10": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "13.1": [
+        "bge-base_dense"
+      ],
+      "6.12": [
+        "bge-m3_dense",
+        "bge-base_dense"
+      ],
+      "18.52": [
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "6.11": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ]
+    },
+    "is_old_gold": {
+      "2.61": false,
+      "6.13": true,
+      "2.66": false,
+      "13.25": false,
+      "6.14": true,
+      "6.19": false,
+      "6.10": true,
+      "13.1": false,
+      "6.12": true,
+      "18.52": false,
+      "6.11": true
+    }
+  },
+  "How does dwelling on sense objects lead to ruin?": {
+    "q_num": 17,
+    "type": "multi_verse",
+    "old_gold": [
+      "2.62",
+      "2.63"
+    ],
+    "systems_by_verse": {
+      "2.63": [],
+      "17.14": [
+        "bge-m3_dense",
+        "bge-base_dense"
+      ],
+      "18.38": [
+        "bge-m3_dense"
+      ],
+      "1.40": [
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "7.27": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_ea"
+      ],
+      "13.10": [
+        "bge-base_dense"
+      ],
+      "2.59": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "13.6": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_ea"
+      ],
+      "16.10": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "2.62": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "16.9": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "5.22": [
+        "bge-m3_dense",
+        "bge-base_dense"
+      ]
+    },
+    "is_old_gold": {
+      "2.63": true,
+      "17.14": false,
+      "18.38": false,
+      "1.40": false,
+      "7.27": false,
+      "13.10": false,
+      "2.59": false,
+      "13.6": false,
+      "16.10": false,
+      "2.62": true,
+      "16.9": false,
+      "5.22": false
+    }
+  },
+  "What foods does the Gita associate with each of the three gunas?": {
+    "q_num": 18,
+    "type": "multi_verse",
+    "old_gold": [
+      "17.8",
+      "17.9",
+      "17.10"
+    ],
+    "systems_by_verse": {
+      "15.14": [
+        "bge-m3_dense"
+      ],
+      "7.13": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "17.10": [],
+      "2.45": [
+        "bge-base_dense"
+      ],
+      "17.9": [],
+      "7.12": [
+        "bge-m3_dense",
+        "bge-base_dense"
+      ],
+      "3.5": [
+        "bge-base_dense"
+      ],
+      "17.7": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "17.8": [
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "14.5": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "14.3": [
+        "bge-m3_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_ea"
+      ],
+      "18.19": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ]
+    },
+    "is_old_gold": {
+      "15.14": false,
+      "7.13": false,
+      "17.10": true,
+      "2.45": false,
+      "17.9": true,
+      "7.12": false,
+      "3.5": false,
+      "17.7": false,
+      "17.8": true,
+      "14.5": false,
+      "14.3": false,
+      "18.19": false
+    }
+  },
+  "i keep getting distracted, what does krishna say": {
+    "q_num": 19,
+    "type": "conceptual",
+    "old_gold": [
+      "6.26",
+      "6.35"
+    ],
+    "systems_by_verse": {
+      "6.35": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "18.76": [
+        "bge-base_dense"
+      ],
+      "1.32": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "11.41": [
+        "bge-m3_hybrid_sw"
+      ],
+      "18.73": [
+        "bge-m3_dense"
+      ],
+      "12.9": [
+        "bge-m3_dense",
+        "bge-base_dense"
+      ],
+      "6.34": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "6.26": [],
+      "2.1": [
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "6.33": [
+        "bge-m3_dense"
+      ],
+      "11.35": [
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "2.54": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_ea"
+      ],
+      "10.18": [
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_ea"
+      ],
+      "6.37": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_ea"
+      ]
+    },
+    "is_old_gold": {
+      "6.35": true,
+      "18.76": false,
+      "1.32": false,
+      "11.41": false,
+      "18.73": false,
+      "12.9": false,
+      "6.34": false,
+      "6.26": true,
+      "2.1": false,
+      "6.33": false,
+      "11.35": false,
+      "2.54": false,
+      "10.18": false,
+      "6.37": false
+    }
+  },
+  "what happens to someone who gives up in the middle of yoga": {
+    "q_num": 20,
+    "type": "conceptual",
+    "old_gold": [
+      "6.40",
+      "6.41",
+      "6.44"
+    ],
+    "systems_by_verse": {
+      "4.20": [
+        "bge-base_dense"
+      ],
+      "4.28": [
+        "bge-m3_dense"
+      ],
+      "8.10": [
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "8.6": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "6.40": [],
+      "18.11": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_ea"
+      ],
+      "13.35": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "6.4": [
+        "bge-base_dense"
+      ],
+      "6.37": [
+        "bge-m3_dense",
+        "bge-base_dense",
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "6.17": [
+        "bge-m3_hybrid",
+        "bge-m3_hybrid_sw",
+        "bge-m3_hybrid_ea",
+        "bge-m3_hybrid_ea_sw"
+      ],
+      "6.41": [
+        "bge-base_dense"
+      ],
+      "6.20": [
+        "bge-m3_dense"
+      ],
+      "5.12": [
+        "bge-m3_dense"
+      ],
+      "6.44": [
+        "bge-m3_dense",
+        "bge-base_dense"
+      ]
+    },
+    "is_old_gold": {
+      "4.20": false,
+      "4.28": false,
+      "8.10": false,
+      "8.6": false,
+      "6.40": true,
+      "18.11": false,
+      "13.35": false,
+      "6.4": false,
+      "6.37": false,
+      "6.17": false,
+      "6.41": true,
+      "6.20": false,
+      "5.12": false,
+      "6.44": true
+    }
+  }
+}

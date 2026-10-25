@@ -1,0 +1,168 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-primary: #FAF6EB;
+    --bg-surface: #F4ECE1;
+    --bg-surface-elevated: #EDE3D2;
+    --gold-cream: #F5E6C8;
+    --gold-accent: #C5A059;
+    --gold-deep: #A27427;
+    --gold-border: rgba(197, 160, 89, 0.28);
+    --gold-border-glow: rgba(197, 160, 89, 0.45);
+    --surya-gold: #E28743;
+    --ivory-text: #2C261F;
+    --ivory-muted: #6A5A48;
+  }
+
+  body {
+    background-color: #FAF6EB;
+    color: #2C261F;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
+  }
+}
+
+/* Custom Typography Utilities */
+.font-cinzel {
+  font-family: 'Cinzel', serif;
+}
+
+.font-cinzel-dec {
+  font-family: 'Cinzel Decorative', serif;
+}
+
+.font-sanskrit {
+  font-family: 'Tiro Devanagari Sanskrit', serif;
+}
+
+.font-sans-body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Gold Text Gradients */
+.gold-gradient-text {
+  background: linear-gradient(135deg, #F4D98E 0%, #D4AF37 35%, #C5A059 70%, #8C642B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.surya-gradient-text {
+  background: linear-gradient(135deg, #FFFDF0 0%, #FFD166 40%, #FFB703 70%, #F59E0B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.ivory-gradient-text {
+  background: linear-gradient(135deg, #FFFFFF 0%, #FAF6ED 60%, #E5DCC5 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Filigree & Royal Borders */
+.filigree-card {
+  background: rgba(255, 253, 248, 0.9);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  box-shadow: 0 10px 30px rgba(180, 140, 75, 0.08);
+  backdrop-filter: blur(12px);
+  position: relative;
+}
+
+.filigree-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.3), rgba(255, 255, 255, 0.1) 50%, rgba(197, 160, 89, 0.2));
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+
+.gold-glow {
+  box-shadow: 0 0 35px -5px rgba(255, 183, 3, 0.25), 0 0 15px -2px rgba(226, 200, 137, 0.3);
+}
+
+.subtle-gold-glow {
+  box-shadow: 0 0 20px -3px rgba(226, 200, 137, 0.15);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F4ECE1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(197, 160, 89, 0.45);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(162, 116, 39, 0.7);
+}
+
+.royal-card {
+  background: rgba(255, 253, 248, 0.88);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  box-shadow: 0 10px 30px rgba(180, 140, 75, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.sacred-atmosphere { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.sacred-cloud { position: absolute; width: 70vw; height: 30vh; min-height: 190px; border-radius: 50%; filter: blur(55px); opacity: .24; background: radial-gradient(ellipse, rgba(255,255,255,.9) 0%, rgba(239,220,180,.55) 42%, transparent 72%); animation: cloudFloat 45s linear infinite; }
+.sacred-cloud-one { top: 8%; left: -30%; }
+.sacred-cloud-two { top: 43%; left: 40%; opacity: .15; animation-duration: 58s; animation-direction: reverse; }
+.sacred-cloud-three { bottom: -4%; left: -20%; opacity: .18; animation-duration: 66s; }
+.sacred-rain { position: absolute; inset: 0; width: 100%; height: 100%; }
+@keyframes cloudFloat { from { transform: translateX(-12vw) translateY(0); } 50% { transform: translateX(26vw) translateY(2vh); } to { transform: translateX(58vw) translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .sacred-cloud { animation: none; } }
+
+/* Subtle Shimmer Animation */
+@keyframes shimmerWave {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-gold-shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(226, 200, 137, 0.15) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmerWave 3s infinite linear;
+}
+
+@keyframes divineFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-divine-float {
+  animation: divineFloat 4s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}

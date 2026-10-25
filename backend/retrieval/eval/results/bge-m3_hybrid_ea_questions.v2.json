@@ -1,0 +1,574 @@
+[
+ {
+  "q": "What does the Gita say about acting without attachment to results?",
+  "type": "conceptual",
+  "gold": [
+   "3.25",
+   "18.9",
+   "3.9",
+   "3.19",
+   "5.10",
+   "2.47",
+   "2.48",
+   "18.23",
+   "18.6",
+   "4.20"
+  ],
+  "routed": false,
+  "retrieved": [
+   "4.20",
+   "3.19",
+   "2.47",
+   "3.25",
+   "18.23",
+   "18.9",
+   "4.23",
+   "18.26",
+   "5.10",
+   "18.6"
+  ],
+  "hit": 1.0,
+  "recall": 1.0,
+  "rr": 1.0
+ },
+ {
+  "q": "How do I control a restless, wandering mind?",
+  "type": "conceptual",
+  "gold": [
+   "6.12",
+   "6.26",
+   "6.35"
+  ],
+  "routed": false,
+  "retrieved": [
+   "6.26",
+   "6.34",
+   "17.14",
+   "6.35",
+   "17.16",
+   "5.28",
+   "6.10",
+   "2.66",
+   "2.67",
+   "2.61"
+  ],
+  "hit": 1.0,
+  "recall": 0.6666666666666666,
+  "rr": 1.0
+ },
+ {
+  "q": "Is the soul ever born or does it ever die?",
+  "type": "conceptual",
+  "gold": [
+   "2.20",
+   "2.12",
+   "2.23"
+  ],
+  "routed": false,
+  "retrieved": [
+   "2.20",
+   "4.9",
+   "15.7",
+   "13.22",
+   "13.3",
+   "2.13",
+   "13.28",
+   "13.20",
+   "14.15",
+   "14.3"
+  ],
+  "hit": 1.0,
+  "recall": 0.3333333333333333,
+  "rr": 1.0
+ },
+ {
+  "q": "Why should I do my own duty even if I do it imperfectly?",
+  "type": "conceptual",
+  "gold": [
+   "18.48",
+   "18.47",
+   "3.35",
+   "18.45"
+  ],
+  "routed": false,
+  "retrieved": [
+   "18.47",
+   "3.35",
+   "18.48",
+   "2.31",
+   "3.8",
+   "18.10",
+   "18.45",
+   "18.60",
+   "2.33",
+   "18.7"
+  ],
+  "hit": 1.0,
+  "recall": 0.75,
+  "rr": 1.0
+ },
+ {
+  "q": "How should one stay balanced in pleasure and pain?",
+  "type": "conceptual",
+  "gold": [
+   "2.14",
+   "2.15",
+   "2.38"
+  ],
+  "routed": false,
+  "retrieved": [
+   "2.14",
+   "6.7",
+   "18.38",
+   "13.3",
+   "14.24",
+   "2.15",
+   "18.36",
+   "13.21",
+   "5.22",
+   "13.7"
+  ],
+  "hit": 1.0,
+  "recall": 0.3333333333333333,
+  "rr": 1.0
+ },
+ {
+  "q": "Can I be freed from sin and sorrow by surrendering to God?",
+  "type": "conceptual",
+  "gold": [
+   "9.28",
+   "18.66",
+   "18.62"
+  ],
+  "routed": false,
+  "retrieved": [
+   "6.22",
+   "17.27",
+   "2.38",
+   "7.28",
+   "3.13",
+   "11.44",
+   "2.8",
+   "15.5",
+   "6.28",
+   "9.28"
+  ],
+  "hit": 0.0,
+  "recall": 0.0,
+  "rr": 0.1
+ },
+ {
+  "q": "What are the three qualities of nature that bind a person?",
+  "type": "conceptual",
+  "gold": [
+   "14.6",
+   "14.8",
+   "14.7",
+   "14.5"
+  ],
+  "routed": false,
+  "retrieved": [
+   "14.5",
+   "2.45",
+   "13.22",
+   "7.13",
+   "17.2",
+   "18.40",
+   "3.5",
+   "8.19",
+   "17.3",
+   "14.21"
+  ],
+  "hit": 1.0,
+  "recall": 0.25,
+  "rr": 1.0
+ },
+ {
+  "q": "What kind of devotee is dear to the Lord?",
+  "type": "conceptual",
+  "gold": [
+   "12.17",
+   "12.14",
+   "12.15",
+   "12.20",
+   "12.18",
+   "12.19",
+   "12.13",
+   "12.16",
+   "7.17"
+  ],
+  "routed": false,
+  "retrieved": [
+   "12.14",
+   "12.20",
+   "12.17",
+   "7.17",
+   "7.18",
+   "12.16",
+   "12.1",
+   "10.10",
+   "12.13",
+   "12.19"
+  ],
+  "hit": 1.0,
+  "recall": 0.8,
+  "rr": 1.0
+ },
+ {
+  "q": "What is the first verse of the Gita?",
+  "type": "lookup",
+  "gold": [
+   "1.1"
+  ],
+  "routed": false,
+  "retrieved": [
+   "13.1",
+   "9.3",
+   "11.37",
+   "3.41",
+   "2.11",
+   "13.7",
+   "11.55",
+   "18.73",
+   "18.68",
+   "2.55"
+  ],
+  "hit": 0.0,
+  "recall": 0.0,
+  "rr": 0.0
+ },
+ {
+  "q": "Show me chapter 4 verse 7.",
+  "type": "lookup",
+  "gold": [
+   "4.7"
+  ],
+  "routed": true,
+  "retrieved": [
+   "4.7"
+  ],
+  "hit": 1.0,
+  "recall": 1.0,
+  "rr": 1.0
+ },
+ {
+  "q": "Verse 9.22",
+  "type": "lookup",
+  "gold": [
+   "9.22"
+  ],
+  "routed": true,
+  "retrieved": [
+   "9.22"
+  ],
+  "hit": 1.0,
+  "recall": 1.0,
+  "rr": 1.0
+ },
+ {
+  "q": "What does 11.32 say?",
+  "type": "lookup",
+  "gold": [
+   "11.32"
+  ],
+  "routed": true,
+  "retrieved": [
+   "11.32"
+  ],
+  "hit": 1.0,
+  "recall": 1.0,
+  "rr": 1.0
+ },
+ {
+  "q": "Give me the verse where Krishna compares changing bodies to childhood, youth and old age.",
+  "type": "lookup",
+  "gold": [
+   "2.13"
+  ],
+  "routed": false,
+  "retrieved": [
+   "2.13",
+   "13.9",
+   "7.29",
+   "14.20",
+   "4.8",
+   "6.30",
+   "2.18",
+   "15.16",
+   "13.3",
+   "13.20"
+  ],
+  "hit": 1.0,
+  "recall": 1.0,
+  "rr": 1.0
+ },
+ {
+  "q": "Read out chapter 6, verse 5.",
+  "type": "lookup",
+  "gold": [
+   "6.5"
+  ],
+  "routed": true,
+  "retrieved": [
+   "6.5"
+  ],
+  "hit": 1.0,
+  "recall": 1.0,
+  "rr": 1.0
+ },
+ {
+  "q": "What does the word sthitaprajna mean?",
+  "type": "word_meaning",
+  "gold": [
+   "2.56",
+   "2.55",
+   "2.57",
+   "2.58"
+  ],
+  "routed": false,
+  "retrieved": [
+   "18.10",
+   "17.26",
+   "1.10",
+   "13.8",
+   "18.37",
+   "2.54",
+   "3.14",
+   "3.27",
+   "11.37",
+   "3.9"
+  ],
+  "hit": 0.0,
+  "recall": 0.0,
+  "rr": 0.0
+ },
+ {
+  "q": "In what sense does the Gita use the word yoga, as in 'yoga is skill in action'?",
+  "type": "word_meaning",
+  "gold": [
+   "6.1",
+   "2.48",
+   "2.50"
+  ],
+  "routed": false,
+  "retrieved": [
+   "2.50",
+   "2.49",
+   "4.18",
+   "6.3",
+   "6.4",
+   "6.1",
+   "11.55",
+   "17.26",
+   "17.25",
+   "2.48"
+  ],
+  "hit": 1.0,
+  "recall": 0.3333333333333333,
+  "rr": 1.0
+ },
+ {
+  "q": "What does Om Tat Sat mean?",
+  "type": "word_meaning",
+  "gold": [
+   "17.26",
+   "17.24",
+   "17.25",
+   "17.27",
+   "17.23"
+  ],
+  "routed": false,
+  "retrieved": [
+   "17.23",
+   "17.25",
+   "17.27",
+   "11.37",
+   "17.26",
+   "8.11",
+   "9.19",
+   "8.13",
+   "17.24",
+   "9.17"
+  ],
+  "hit": 1.0,
+  "recall": 0.8,
+  "rr": 1.0
+ },
+ {
+  "q": "What does the Gita mean by maya?",
+  "type": "word_meaning",
+  "gold": [
+   "7.14",
+   "7.25",
+   "4.6"
+  ],
+  "routed": false,
+  "retrieved": [
+   "7.25",
+   "7.14",
+   "15.16",
+   "18.73",
+   "18.68",
+   "4.6",
+   "3.11",
+   "7.15",
+   "12.3",
+   "15.7"
+  ],
+  "hit": 1.0,
+  "recall": 0.6666666666666666,
+  "rr": 1.0
+ },
+ {
+  "q": "Is renunciation of action better than selfless action?",
+  "type": "multi_verse",
+  "gold": [
+   "3.4",
+   "5.2",
+   "18.9",
+   "18.11"
+  ],
+  "routed": false,
+  "retrieved": [
+   "12.12",
+   "5.2",
+   "18.11",
+   "3.4",
+   "5.1",
+   "3.35",
+   "18.8",
+   "5.6",
+   "18.6",
+   "18.47"
+  ],
+  "hit": 1.0,
+  "recall": 0.75,
+  "rr": 0.5
+ },
+ {
+  "q": "How does the Gita describe the proper place and posture for meditation?",
+  "type": "multi_verse",
+  "gold": [
+   "6.13",
+   "6.14",
+   "6.10",
+   "6.12",
+   "6.11"
+  ],
+  "routed": false,
+  "retrieved": [
+   "6.11",
+   "2.66",
+   "6.10",
+   "13.25",
+   "6.19",
+   "7.1",
+   "6.3",
+   "5.27",
+   "6.12",
+   "8.8"
+  ],
+  "hit": 1.0,
+  "recall": 0.4,
+  "rr": 1.0
+ },
+ {
+  "q": "How does dwelling on sense objects lead to ruin?",
+  "type": "multi_verse",
+  "gold": [
+   "2.63",
+   "2.62"
+  ],
+  "routed": false,
+  "retrieved": [
+   "2.62",
+   "16.10",
+   "16.9",
+   "7.27",
+   "13.6",
+   "3.34",
+   "14.17",
+   "13.10",
+   "14.8",
+   "1.40"
+  ],
+  "hit": 1.0,
+  "recall": 0.5,
+  "rr": 1.0
+ },
+ {
+  "q": "What foods does the Gita associate with each of the three gunas?",
+  "type": "multi_verse",
+  "gold": [
+   "17.10",
+   "17.9",
+   "17.8"
+  ],
+  "routed": false,
+  "retrieved": [
+   "17.7",
+   "14.3",
+   "14.5",
+   "18.19",
+   "7.13",
+   "2.45",
+   "7.12",
+   "17.8",
+   "17.2",
+   "18.40"
+  ],
+  "hit": 0.0,
+  "recall": 0.0,
+  "rr": 0.125
+ },
+ {
+  "q": "i keep getting distracted, what does krishna say",
+  "type": "conceptual",
+  "gold": [
+   "6.35",
+   "12.9",
+   "6.26"
+  ],
+  "routed": false,
+  "retrieved": [
+   "6.37",
+   "1.32",
+   "2.54",
+   "10.18",
+   "11.35",
+   "6.34",
+   "5.20",
+   "12.9",
+   "6.35",
+   "14.23"
+  ],
+  "hit": 0.0,
+  "recall": 0.0,
+  "rr": 0.125
+ },
+ {
+  "q": "what happens to someone who gives up in the middle of yoga",
+  "type": "conceptual",
+  "gold": [
+   "6.40",
+   "6.41",
+   "6.44"
+  ],
+  "routed": false,
+  "retrieved": [
+   "18.11",
+   "6.37",
+   "6.17",
+   "8.6",
+   "13.35",
+   "8.10",
+   "14.18",
+   "6.44",
+   "2.28",
+   "4.28"
+  ],
+  "hit": 0.0,
+  "recall": 0.0,
+  "rr": 0.125
+ }
+]

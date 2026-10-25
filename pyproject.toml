@@ -1,15 +1,10 @@
-[project]
-name = "vyom-ai"
-version = "0.1.0"
-description = "Multilingual Bhagavad Gita retrieval and knowledge system"
-requires-python = ">=3.11"
-dependencies = []
-
-[project.optional-dependencies]
-dev = ["pytest", "ruff"]
-
-[tool.ruff]
-line-length = 88
-
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["backend/tests"]
+pythonpath = [
+    "backend",
+    "backend/ingestion",
+    "backend/retrieval",
+    "backend/indexing",
+    "backend/api",
+    "backend/llm",
+]

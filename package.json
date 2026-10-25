@@ -1,0 +1,19 @@
+{
+  "name": "vyom-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "VYOM — Bhagavad Gita Multimodal Intelligence",
+  "scripts": {
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:backend": "uvicorn backend.api.main:app --host 0.0.0.0 --port 8000 --reload",
+    "dev:backend:win": ".\\venv\\Scripts\\python.exe -m uvicorn backend.api.main:app --host 0.0.0.0 --port 8000 --reload",
+    "dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"yellow.bold,cyan.bold\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:win": "concurrently -n \"BACKEND,FRONTEND\" -c \"yellow.bold,cyan.bold\" \"npm run dev:backend:win\" \"npm run dev:frontend\"",
+    "build:frontend": "npm run build --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "lint:frontend": "npm run lint --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

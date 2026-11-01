@@ -134,3 +134,7 @@ frontend/public/**/*.bak
 
 # Git ignore rules cannot filter by byte size; run
 # `node frontend/scripts/check-public-media.mjs` before staging public media.
+*.bak 
+*.bak* 
+backend/_scratch/ 
+frontend/public/translations/ 

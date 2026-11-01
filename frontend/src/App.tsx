@@ -5,12 +5,13 @@ import { SuggestedChips } from './components/SuggestedChips';
 import { VerseDetailModal } from './components/VerseDetailModal';
 import { QuoteCardModal } from './components/QuoteCardModal';
 import { AboutModal } from './components/AboutModal';
+import { GitaBookReader } from './components/GitaBookReader';
 import { VyomLogo } from './components/VyomLogo';
 import { SacredAtmosphere } from './components/SacredAtmosphere';
 import { lookupVerse, type GitaVerse } from './data/gitaVerses';
 import { askGitaQuestion, checkBackendHealth } from './services/api';
-import { SanskritAudio } from './services/audioChant';
-import { BookOpen, Volume2, Sparkles } from 'lucide-react';
+import { onClipPlayStart, onClipPlayEndOrPause } from './services/audioCoordinator';
+import { BookOpen, Volume2, Sparkles, Headphones } from 'lucide-react';
 
 const pillars = [
   { id: '2.47', name: 'Nishkama Karma', note: 'Action without attachment' },
@@ -25,7 +26,8 @@ export function App() {
   const [isBackendOnline, setIsBackendOnline] = useState(false);
   const [isCheckingHealth, setIsCheckingHealth] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-  const [isChanting, setIsChanting] = useState(false);
+  const [isPlaying247, setIsPlaying247] = useState(false);
+  const verse247AudioRef = useRef<HTMLAudioElement | null>(null);
   const [hasEnteredPortal, setHasEnteredPortal] = useState(false);
   const [gatewayFading, setGatewayFading] = useState(false);
   const [backgroundVideoFailed, setBackgroundVideoFailed] = useState(false);
@@ -36,6 +38,8 @@ export function App() {
   const [quoteVerse, setQuoteVerse] = useState<GitaVerse | null>(null);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [activeView, setActiveView] = useState<'chat' | 'book'>('chat');
+  const [bookInitialVerse, setBookInitialVerse] = useState<string | null>(null);
   const [errorBannerText, setErrorBannerText] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([{
@@ -76,16 +80,51 @@ export function App() {
     return () => { document.removeEventListener('visibilitychange', handleVisibility); if (fallback !== undefined) window.clearTimeout(fallback); };
   }, [hasEnteredPortal, beginTransition]);
 
+  useEffect(() => {
+    return () => {
+      if (verse247AudioRef.current) {
+        verse247AudioRef.current.pause();
+      }
+    };
+  }, []);
+
   const handleToggleAudio = async () => {
     const audio = audioRef.current;
     if (!audio) return;
     if (isAudioPlaying) { audio.pause(); setIsAudioPlaying(false); }
     else { try { await audio.play(); setIsAudioPlaying(true); } catch { setIsAudioPlaying(false); } }
   };
-  const toggleChant = () => {
-    if (isChanting) { SanskritAudio.stop(); setIsChanting(false); return; }
-    const verse = lookupVerse('2.47');
-    if (verse) { setIsChanting(true); SanskritAudio.playShlokaChant(verse.sanskrit, verse.transliteration, () => setIsChanting(false)); }
+  const toggle247Audio = () => {
+    if (!verse247AudioRef.current) {
+      const audio = new Audio('/audio/verses/bg_02_47.mp3');
+      audio.onplay = () => {
+        setIsPlaying247(true);
+        onClipPlayStart(audio);
+      };
+      audio.onpause = () => {
+        setIsPlaying247(false);
+        onClipPlayEndOrPause(audio);
+      };
+      audio.onended = () => {
+        setIsPlaying247(false);
+        onClipPlayEndOrPause(audio);
+      };
+      audio.onerror = () => {
+        setIsPlaying247(false);
+        onClipPlayEndOrPause(audio);
+      };
+      verse247AudioRef.current = audio;
+    }
+
+    const audio = verse247AudioRef.current;
+    if (isPlaying247) {
+      audio.pause();
+    } else {
+      audio.currentTime = 0;
+      audio.play().catch(() => {
+        setIsPlaying247(false);
+      });
+    }
   };
   const openVerse = (id: string) => { const verse = lookupVerse(id); if (verse) { setActiveVerse(verse); setIsVerseModalOpen(true); } };
   const handleOpenQuoteCard = (verse: GitaVerse) => { setQuoteVerse(verse); setIsQuoteModalOpen(true); };
@@ -94,7 +133,21 @@ export function App() {
     setIsLoading(true); setErrorBannerText(null);
     try {
       const response = await askGitaQuestion({ query: queryText, top_k: 5 });
-      setMessages((prev) => [...prev, { id: `assistant-${Date.now()}`, sender: 'assistant', text: response.answer, citedVerses: response.cited_verses, routed: response.routed, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), isOfflineFallback: response.isOfflineFallback }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `assistant-${Date.now()}`,
+          sender: 'assistant',
+          text: response.answer,
+          citedVerses: response.cited_verses,
+          routed: response.routed,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isOfflineFallback: response.isOfflineFallback,
+          subQuestions: response.sub_questions,
+          warnings: response.warnings,
+          sources: response.sources,
+        },
+      ]);
     } catch (err) {
       setErrorBannerText(err instanceof Error ? err.message : 'The consultation service is temporarily unavailable.');
       setMessages((prev) => [...prev, { id: `assistant-${Date.now()}`, sender: 'assistant', text: '### A moment for reflection\n\nWhile the consultation service reconnects, remember **BG 2.47**: focus on sincere action, without attachment to its results.', citedVerses: ['2.47'], timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), isOfflineFallback: true }]);
@@ -111,7 +164,7 @@ export function App() {
   };
 
   return (
-    <div className="relative isolate min-h-screen bg-[#FAF6EB] text-[#2C261F] selection:bg-[#D4AF37]/25 selection:text-[#1F1D1A]">
+    <div className={`relative isolate bg-[#FAF6EB] text-[#2C261F] selection:bg-[#D4AF37]/25 selection:text-[#1F1D1A] ${activeView === 'book' ? 'h-screen overflow-hidden flex flex-col' : 'min-h-screen'}`}>
       <audio ref={audioRef} src="/bg_music.mp3" loop preload="none" onPause={() => setIsAudioPlaying(false)} onPlay={() => setIsAudioPlaying(true)} />
       {!hasEnteredPortal ? <div className={`fixed inset-0 z-50 overflow-hidden transition-opacity duration-[800ms] ${gatewayFading ? 'opacity-0' : 'opacity-100'}`}>
         {backgroundVideoFailed && <img src="/kurukshetra_hero.jpg" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />}
@@ -123,11 +176,16 @@ export function App() {
         <div className="absolute inset-x-0 bottom-9 z-10 flex flex-col items-center gap-3 text-center text-[#FFF9EA] drop-shadow-lg"><VyomLogo size="md" showSubtitle={false} /><span className="font-cinzel text-xs tracking-[0.22em]">Bhagavad Gita Multimodal Intelligence</span><span className="text-xs text-[#FFF9EA]/75">Entering the sanctuary…</span></div>
       </div> : <>
         <SacredAtmosphere />
-        <Navbar isBackendOnline={isBackendOnline} isCheckingHealth={isCheckingHealth} onRefreshHealth={checkHealth} isAudioPlaying={isAudioPlaying} onToggleAudio={handleToggleAudio} onOpenAbout={() => setIsAboutOpen(true)} onToggleChant={toggleChant} isChanting={isChanting} />
+        <Navbar isBackendOnline={isBackendOnline} isCheckingHealth={isCheckingHealth} onRefreshHealth={checkHealth} isAudioPlaying={isAudioPlaying} onToggleAudio={handleToggleAudio} onOpenAbout={() => setIsAboutOpen(true)} onOpenBook={() => { setBookInitialVerse(null); setActiveView('book'); }} />
+        {activeView === 'book' ? <GitaBookReader key={bookInitialVerse ?? 'book'} initialVerseId={bookInitialVerse} onBack={() => setActiveView('chat')} /> : <>
         <main className="relative z-10 mx-auto grid w-full max-w-[1440px] flex-1 grid-cols-1 gap-5 px-4 py-6 sm:px-6 lg:grid-cols-[270px_minmax(0,1fr)] lg:px-8">
           <aside className="space-y-4">
             <section className="royal-card rounded-2xl p-5"><p className="font-cinzel text-[10px] font-bold uppercase tracking-[0.18em] text-[#8C2D19]">Your quick sanctuary</p><h2 className="mt-1 font-cinzel text-lg font-bold text-[#4B3825]">Five Gita pillars</h2><div className="mt-4 space-y-2">{pillars.map((pillar) => <button key={pillar.id} onClick={() => openVerse(pillar.id)} className="group w-full rounded-xl border border-[#D4AF37]/20 bg-white/65 p-3 text-left transition hover:border-[#C5A059]/70 hover:bg-[#fffdf8]"><span className="flex items-center justify-between"><span className="font-cinzel text-xs font-bold text-[#8C2D19]">BG {pillar.id}</span><BookOpen className="h-3.5 w-3.5 text-[#C5A059]" /></span><span className="mt-1 block text-sm font-semibold text-[#2C261F]">{pillar.name}</span><span className="mt-0.5 block text-xs text-[#6A5A48]">{pillar.note}</span></button>)}</div></section>
-            <section className="royal-card rounded-2xl p-5"><div className="flex items-center gap-2"><span className="rounded-lg bg-[#F2E6D0] p-2 text-[#A27427]"><Volume2 className="h-4 w-4" /></span><div><h3 className="font-cinzel text-sm font-bold text-[#4B3825]">Sacred listening</h3><p className="text-xs text-[#766653]">A verse, softly recited</p></div></div><button onClick={toggleChant} className="mt-4 w-full rounded-xl border border-[#C5A059]/45 bg-gradient-to-r from-[#FBF4E4] to-[#F3E4C7] px-4 py-2.5 text-sm font-semibold text-[#704B20] transition hover:shadow-md">{isChanting ? 'Stop BG 2.47 chant' : 'Listen to BG 2.47'}</button></section>
+            <section className="royal-card rounded-2xl p-5">
+              <div className="flex items-center gap-2"><span className="rounded-lg bg-[#F2E6D0] p-2 text-[#A27427]"><Volume2 className="h-4 w-4" /></span><div><h3 className="font-cinzel text-sm font-bold text-[#4B3825]">Sacred listening</h3><p className="text-xs text-[#766653]">A verse, softly recited</p></div></div>
+              <button onClick={toggle247Audio} className="mt-4 w-full rounded-xl border border-[#C5A059]/45 bg-gradient-to-r from-[#FBF4E4] to-[#F3E4C7] px-4 py-2.5 text-sm font-semibold text-[#704B20] transition hover:shadow-md">{isPlaying247 ? 'Stop BG 2.47 chant' : 'Listen to BG 2.47 chant'}</button>
+              <button onClick={() => { setBookInitialVerse('2.47'); setActiveView('book'); }} className="mt-2.5 w-full rounded-xl border border-[#C5A059]/35 bg-white/70 px-4 py-2 text-xs font-semibold text-[#704B20] hover:border-[#A27427] hover:bg-[#fffdf8] transition flex items-center justify-center gap-1.5 shadow-sm"><Headphones className="w-3.5 h-3.5 text-[#E28743]" /><span>Explore All 701 Shlokas →</span></button>
+            </section>
             <section className="rounded-2xl border border-[#D4AF37]/25 bg-[#fffdf8]/65 p-4 text-center"><Sparkles className="mx-auto h-4 w-4 text-[#B89343]" /><p className="mt-2 font-sanskrit text-sm text-[#8C2D19]" lang="sa">योगः कर्मसु कौशलम्</p><p className="mt-1 text-[11px] text-[#766653]">Yoga is skill in action · BG 2.50</p></section>
           </aside>
 
@@ -142,6 +200,7 @@ export function App() {
         <VerseDetailModal verse={activeVerse} isOpen={isVerseModalOpen} onClose={() => setIsVerseModalOpen(false)} onOpenQuoteCard={handleOpenQuoteCard} />
         <QuoteCardModal verse={quoteVerse} isOpen={isQuoteModalOpen} onClose={() => setIsQuoteModalOpen(false)} />
         <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
+        </>}
       </>}
     </div>
   );

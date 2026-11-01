@@ -112,7 +112,7 @@ export const GITA_VERSES: Record<string, GitaVerse> = {
     verse_id: "11.32",
     chapter: 11,
     verse: 32,
-    sanskrit: "कालोऽस्मि लोकक्षयकृत्प्रवृद्धो\nलोकान्समाहर्तुमिह प्रवृत्ततः।\nऋतेऽपि त्वां न भविष्यन्ति सर्वे\nयेऽवस्थिताः प्रत्यनीकेषु योधाः॥",
+    sanskrit: "कालोऽस्मि लोकक्षयकृत्प्रवृद्धो\nलोकान्समाहर्तुमिह प्रवृत्तः।\nऋतेऽपि त्वां न भविष्यन्ति सर्वे\nयेऽवस्थिताः प्रत्यनीकेषु योधाः॥",
     transliteration: "kālo 'smi loka-kṣhaya-kṛit pravṛiddho\nlokān samāhartum iha pravṛittaḥ\nṛite 'pi tvāṁ na bhaviṣhyanti sarve\nye 'vasthitāḥ pratyanīkeṣhu yodhāḥ",
     word_meanings: "kālaḥ—time/death; asmi—I am; loka-kṣhaya-kṛit—the destroyer of worlds; pravṛiddhaḥ—mighty; lokān—the worlds; samāhartum—to annihilate; iha—here; pravṛittaḥ—engaged; ṛite—without; api—even; tvām—you; na—not; bhaviṣhyanti—shall live; sarve—all; ye—who; avasthitāḥ—stationed; pratyanīkeṣhu—in opposing ranks; yodhāḥ—warriors",
     translation: "I am Time, the great destroyer of the world, engaged here in annihilating the people. Even without your participation, none of the warriors assembled in the opposing armies will survive.",

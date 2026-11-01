@@ -3,14 +3,35 @@ import { lookupVerse } from '../data/gitaVerses';
 export interface AskRequestPayload {
   query: string;
   top_k?: number;
+  multi?: boolean;
+}
+
+export interface Clip {
+  clip_id: string;
+  audio_url: string;
+  partial: boolean;
+  spoken_lines: string[];
+}
+
+export interface Source {
+  verse_id: string;
+  sanskrit?: string;
+  transliteration?: string;
+  is_neighbor?: boolean;
+  neighbor_of?: string | null;
+  for_question?: number[];
+  clips?: Clip[];
 }
 
 export interface AskResponseData {
   query: string;
-  routed: boolean;
+  routed: boolean | string;
   cited_verses: string[];
   answer: string;
   isOfflineFallback?: boolean;
+  sub_questions?: string[];
+  warnings?: string[];
+  sources?: Source[];
 }
 
 export interface HealthResponseData {
@@ -47,23 +68,25 @@ export async function checkBackendHealth(): Promise<{ online: boolean; details?:
  */
 export async function askGitaQuestion(payload: AskRequestPayload): Promise<AskResponseData> {
   const top_k = payload.top_k ?? 5;
+  const multi = payload.multi ?? true;
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout for LLM synthesis
+    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout for multi-query LLM synthesis
 
     const res = await fetch('/api/ask', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ query: payload.query, top_k }),
+      body: JSON.stringify({ query: payload.query, top_k, multi }),
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
 
-    if (res.status === 502) {
-      throw new Error('502_GENERATION_ERROR');
+    // Map 429 (rate-limit) and 5xx (backend/provider error) to friendly guide message
+    if (res.status === 429 || res.status >= 500) {
+      throw new Error('The guide is busy, please try again in a minute');
     }
 
     if (!res.ok) {
@@ -71,16 +94,21 @@ export async function askGitaQuestion(payload: AskRequestPayload): Promise<AskRe
     }
 
     const data: AskResponseData = await res.json();
-    return data;
+    return {
+      ...data,
+      sub_questions: data.sub_questions ?? [],
+      warnings: data.warnings ?? [],
+      sources: data.sources ?? [],
+    };
   } catch (err: unknown) {
     const errMessage = err instanceof Error ? err.message : String(err);
 
-    // Propagate 502 to trigger the serene golden banner
-    if (errMessage === '502_GENERATION_ERROR') {
-      throw new Error('The divine intelligence is contemplating deep synthesis. Please inquire again momentarily.');
+    // Propagate 429 and 5xx to trigger the serene golden banner
+    if (errMessage === 'The guide is busy, please try again in a minute') {
+      throw err;
     }
 
-    // If backend is unreachable (e.g. not running on 8000), provide enlightened local fallback
+    // If backend is unreachable (e.g. network failure), provide enlightened local fallback
     console.warn('[VYOM] Backend offline or unreachable. Providing local grounded Gita synthesis.', errMessage);
     return generateOfflineGitaWisdom(payload.query);
   }
@@ -93,7 +121,7 @@ function generateOfflineGitaWisdom(query: string): AskResponseData {
   const lower = query.toLowerCase();
 
   // 1. Direct Verse routing check
-  const verseMatch = query.match(/(?:bg|gita|verse)?\s*([1-9]|1[0-8])\s*[\.:]\s*([1-9]|[1-6][0-9]|7[0-8])/i);
+  const verseMatch = query.match(/(?:bg|gita|verse)?\s*([1-9]|1[0-8])\s*[.:]\s*([1-9]|[1-6][0-9]|7[0-8])/i);
   if (verseMatch) {
     const vid = `${parseInt(verseMatch[1], 10)}.${parseInt(verseMatch[2], 10)}`;
     const found = lookupVerse(vid);

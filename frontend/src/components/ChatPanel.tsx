@@ -3,7 +3,6 @@ import {
   Send,
   Sparkles,
   BookOpen,
-  Volume2,
   Copy,
   Check,
   AlertCircle,
@@ -12,16 +11,20 @@ import {
   ArrowUpRight,
 } from 'lucide-react';
 import { lookupVerse, type GitaVerse } from '../data/gitaVerses';
-import { SanskritAudio } from '../services/audioChant';
+import type { Source } from '../services/api';
+import { ClipPlayer } from './ClipPlayer';
 
 export interface ChatMessage {
   id: string;
   sender: 'user' | 'assistant';
   text: string;
   citedVerses?: string[];
-  routed?: boolean;
+  routed?: boolean | string;
   timestamp: string;
   isOfflineFallback?: boolean;
+  subQuestions?: string[];
+  warnings?: string[];
+  sources?: Source[];
 }
 
 interface ChatPanelProps {
@@ -45,7 +48,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 }) => {
   const [inputText, setInputText] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [playingVerse, setPlayingVerse] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -64,21 +66,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const handleChantVerse = (verseId: string) => {
-    const v = lookupVerse(verseId);
-    if (!v) return;
-
-    if (playingVerse === verseId) {
-      SanskritAudio.stop();
-      setPlayingVerse(null);
-    } else {
-      setPlayingVerse(verseId);
-      SanskritAudio.playShlokaChant(v.sanskrit, v.transliteration, () => {
-        setPlayingVerse(null);
-      });
-    }
   };
 
   /**
@@ -231,61 +218,195 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                 <div className="space-y-1">
                   {formatGitaResponse(msg.text)}
 
-                  {/* Cited Verses Bar */}
-                  {msg.citedVerses && msg.citedVerses.length > 0 && (
-                    <div className="mt-4 pt-3 border-t border-[#C5A059]/15 flex flex-wrap items-center gap-2">
-                      <span className="font-cinzel text-[10px] uppercase tracking-wider text-[#C5A059]/80 font-bold flex items-center gap-1">
-                        <BookOpen className="w-3 h-3 text-[#E28743]" /> Cited Verses:
-                      </span>
+                  {/* Warning Note when quotes failed strict verification */}
+                  {msg.warnings && msg.warnings.length > 0 && (
+                    <div className="mt-2.5 pt-2 border-t border-[#C5A059]/15 flex items-center gap-1.5 text-[11px] font-cinzel text-amber-800/80 italic">
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                      <span>Some quotes could not be checked against the translations</span>
+                    </div>
+                  )}
 
-                      {msg.citedVerses.map((vid) => {
-                        const verseObj = lookupVerse(vid);
-                        const isThisChanting = playingVerse === vid;
+                  {/* Sources / Cited Verses Bar */}
+                  {(() => {
+                    const hasSources = msg.sources && msg.sources.length > 0;
 
-                        return (
-                          <div
-                            key={vid}
-                            className="inline-flex items-center rounded-lg bg-[#F4ECE1] border border-[#C5A059]/30 hover:border-[#E28743]/70 transition-all shadow-sm"
-                          >
-                            <button
-                              onClick={() => {
-                                if (verseObj) onOpenVerseDetail(verseObj);
-                              }}
-                              className="px-2.5 py-1 font-cinzel text-xs font-semibold text-[#8C2D19] hover:text-[#2C261F] flex items-center gap-1"
-                              title="Click to view full Sanskrit, transliteration and commentaries"
-                            >
-                              <span>BG {vid}</span>
-                              <ArrowUpRight className="w-3 h-3 opacity-60" />
-                            </button>
+                    // Fallback to local gitaVerses data if backend sources array is empty
+                    if (!hasSources) {
+                      if (!msg.citedVerses || msg.citedVerses.length === 0) return null;
 
-                            {/* Audio Chant Button */}
-                            <button
-                              onClick={() => handleChantVerse(vid)}
-                              title={isThisChanting ? 'Stop Chant' : 'Listen to Sanskrit Shloka'}
-                              className={`p-1 border-l border-[#C5A059]/20 transition-colors ${
-                                isThisChanting
-                                  ? 'bg-[#E28743] text-[#F4ECE1]'
-                                  : 'text-[#C5A059] hover:text-[#2C261F] hover:bg-[#FFFDF8]'
-                              }`}
-                            >
-                              <Volume2 className="w-3 h-3" />
-                            </button>
+                      return (
+                        <div className="mt-4 pt-3 border-t border-[#C5A059]/15 flex flex-wrap items-center gap-2">
+                          <span className="font-cinzel text-[10px] uppercase tracking-wider text-[#C5A059]/80 font-bold flex items-center gap-1">
+                            <BookOpen className="w-3 h-3 text-[#E28743]" /> Cited Verses:
+                          </span>
 
-                            {/* Quote Card Trigger */}
+                          {msg.citedVerses.map((vid) => {
+                            const verseObj = lookupVerse(vid);
+
+                            return (
+                              <div
+                                key={vid}
+                                className="inline-flex items-center rounded-lg bg-[#F4ECE1] border border-[#C5A059]/30 hover:border-[#E28743]/70 transition-all shadow-sm"
+                              >
+                                <button
+                                  onClick={() => {
+                                    if (verseObj) onOpenVerseDetail(verseObj);
+                                  }}
+                                  className="px-2.5 py-1 font-cinzel text-xs font-semibold text-[#8C2D19] hover:text-[#2C261F] flex items-center gap-1"
+                                  title="Click to view full Sanskrit, transliteration and commentaries"
+                                >
+                                  <span>BG {vid}</span>
+                                  <ArrowUpRight className="w-3 h-3 opacity-60" />
+                                </button>
+
+                                {/* Quote Card Trigger */}
+                                {verseObj && (
+                                  <button
+                                    onClick={() => onOpenQuoteCard(verseObj)}
+                                    title="Generate Royal Quote Card"
+                                    className="p-1 border-l border-[#C5A059]/20 text-[#C5A059] hover:text-[#2C261F] hover:bg-[#FFFDF8] transition-colors"
+                                  >
+                                    <Share2 className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    }
+
+                    // Rich multimodal RAG sources
+                    const allSources = msg.sources ?? [];
+
+                    // Extract verse numbers explicitly quoted in msg.text (e.g. (BG x.y) or BG x.y)
+                    const quotedIdsList: string[] = [];
+                    const quoteRegex = /\bBG\s*([1-9]|1[0-8])[.:]([1-9]|[1-6][0-9]|7[0-8])\b/gi;
+                    let m: RegExpExecArray | null;
+                    while ((m = quoteRegex.exec(msg.text)) !== null) {
+                      const vid = `${parseInt(m[1], 10)}.${parseInt(m[2], 10)}`;
+                      if (!quotedIdsList.includes(vid)) {
+                        quotedIdsList.push(vid);
+                      }
+                    }
+                    const quotedSet = new Set(quotedIdsList);
+
+                    const quotedSources = allSources.filter((s) => quotedSet.has(s.verse_id));
+                    const unquotedSources = allSources.filter((s) => !quotedSet.has(s.verse_id));
+
+                    const hasQuoted = quotedSources.length > 0;
+                    const primarySources = hasQuoted
+                      ? quotedSources
+                      : allSources.filter((s) => !s.is_neighbor);
+                    const nearbySources = hasQuoted
+                      ? unquotedSources
+                      : allSources.filter((s) => s.is_neighbor);
+
+                    const subQuestions = msg.subQuestions ?? [];
+                    const hasMultipleQuestions = subQuestions.length > 1;
+
+                    const renderSourceCard = (s: Source) => {
+                      const verseObj = lookupVerse(s.verse_id);
+
+                      return (
+                        <div
+                          key={s.verse_id}
+                          className="rounded-xl border border-[#C5A059]/30 bg-[#FFFDF8]/90 p-3 space-y-2 shadow-sm transition-all hover:border-[#C5A059]/60"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="font-cinzel text-xs font-bold text-[#8C2D19] bg-[#F1E0BB]/60 px-2 py-0.5 rounded-md border border-[#C5A059]/30">
+                                BG {s.verse_id}
+                              </span>
+                              {s.is_neighbor && s.neighbor_of && (
+                                <span className="text-[10px] font-cinzel text-[#6A5A48] italic">
+                                  (Context for BG {s.neighbor_of})
+                                </span>
+                              )}
+                            </div>
                             {verseObj && (
                               <button
-                                onClick={() => onOpenQuoteCard(verseObj)}
-                                title="Generate Royal Quote Card"
-                                className="p-1 border-l border-[#C5A059]/20 text-[#C5A059] hover:text-[#2C261F] hover:bg-[#FFFDF8] transition-colors"
+                                onClick={() => onOpenVerseDetail(verseObj)}
+                                className="text-[11px] font-cinzel font-semibold text-[#8C2D19] hover:text-[#2C261F] flex items-center gap-1 transition-colors"
+                                title="View full verse details"
                               >
-                                <Share2 className="w-3 h-3" />
+                                <span>Exposition</span>
+                                <ArrowUpRight className="w-3 h-3 opacity-70" />
                               </button>
                             )}
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
+
+                          {s.sanskrit && (
+                            <p className="font-sanskrit text-xs text-[#2C261F] leading-relaxed" lang="sa">
+                              {s.sanskrit}
+                            </p>
+                          )}
+
+                          {s.transliteration && (
+                            <p className="font-cinzel text-[11px] text-[#6A5A48] italic leading-normal">
+                              {s.transliteration}
+                            </p>
+                          )}
+
+                          {s.clips && s.clips.length > 0 && <ClipPlayer clips={s.clips} />}
+                        </div>
+                      );
+                    };
+
+                    return (
+                      <div className="mt-4 pt-3 border-t border-[#C5A059]/20 space-y-4">
+                        {/* Primary Sources */}
+                        {hasMultipleQuestions && subQuestions.some((_, i) => primarySources.some((s) => s.for_question?.includes(i))) ? (
+                          <div className="space-y-4">
+                            {subQuestions.map((sq, i) => {
+                              const qSources = primarySources.filter((s) => s.for_question?.includes(i));
+                              if (qSources.length === 0) return null;
+                              return (
+                                <div key={i} className="space-y-2">
+                                  <h5 className="font-cinzel text-xs font-bold text-[#8C2D19] flex items-center gap-1.5 tracking-wide">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#E28743]" />
+                                    <span>Sub-Question {i + 1}: {sq}</span>
+                                  </h5>
+                                  <div className="grid grid-cols-1 gap-2">
+                                    {qSources.map(renderSourceCard)}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          primarySources.length > 0 && (
+                            <div className="space-y-2">
+                              <span className="font-cinzel text-[10px] uppercase tracking-wider text-[#C5A059]/90 font-bold flex items-center gap-1">
+                                <BookOpen className="w-3 h-3 text-[#E28743]" /> Source Verses:
+                              </span>
+                              <div className="grid grid-cols-1 gap-2">
+                                {primarySources.map(renderSourceCard)}
+                              </div>
+                            </div>
+                          )
+                        )}
+
+                        {/* Nearby Sources in a Collapsed "Nearby verses" Section */}
+                        {nearbySources.length > 0 && (
+                          <details className="group rounded-xl border border-[#C5A059]/25 bg-[#FAF6EB]/50 p-2.5 transition-all text-xs">
+                            <summary className="font-cinzel font-semibold text-[#8C2D19] cursor-pointer list-none flex items-center justify-between select-none py-0.5">
+                              <span className="flex items-center gap-1.5">
+                                <BookOpen className="w-3.5 h-3.5 text-[#E28743]" />
+                                Nearby verses ({nearbySources.length})
+                              </span>
+                              <span className="text-[10px] text-[#A27427] font-sans group-open:rotate-180 transition-transform">
+                                ▼
+                              </span>
+                            </summary>
+                            <div className="mt-2.5 space-y-2 pt-2 border-t border-[#C5A059]/15">
+                              {nearbySources.map(renderSourceCard)}
+                            </div>
+                          </details>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 

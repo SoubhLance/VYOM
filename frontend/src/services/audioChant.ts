@@ -178,7 +178,7 @@ class SanskritAudioEngine {
    */
   public playShlokaChant(
     sanskritText: string,
-    transliteration: string,
+    _transliteration?: string,
     onEnded?: () => void
   ) {
     this.stop();
@@ -216,28 +216,7 @@ class SanskritAudioEngine {
       delay += noteDuration;
     });
 
-    // Also utilize Web Speech API with serene Sanskrit pitch if available in browser
-    if ('speechSynthesis' in window) {
-      try {
-        const utterance = new SpeechSynthesisUtterance(transliteration || sanskritText);
-        utterance.rate = 0.78;
-        utterance.pitch = 0.9;
-        utterance.volume = 0.45;
-        // Try to pick Sanskrit / Hindi voice if found
-        const voices = window.speechSynthesis.getVoices();
-        const indianVoice = voices.find(v => v.lang.includes('hi') || v.lang.includes('sa') || v.name.includes('India'));
-        if (indianVoice) {
-          utterance.voice = indianVoice;
-        }
-        setTimeout(() => {
-          if (this.isPlaying) {
-            window.speechSynthesis.speak(utterance);
-          }
-        }, 1200);
-      } catch {
-        // Audio synthesis takes care
-      }
-    }
+    // Synthetic robotic speech synthesis disabled - authentic recitations used exclusively
 
     const totalDuration = (delay + 3.0) * 1000;
     this.chantTimeout = window.setTimeout(() => {

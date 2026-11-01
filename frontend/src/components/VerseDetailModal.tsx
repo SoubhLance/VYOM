@@ -1,15 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   X,
-  Volume2,
-  VolumeX,
   Sparkles,
   Share2,
   BookOpen,
   Feather,
 } from 'lucide-react';
 import type { GitaVerse } from '../data/gitaVerses';
-import { SanskritAudio } from '../services/audioChant';
 
 interface VerseDetailModalProps {
   verse: GitaVerse | null;
@@ -24,30 +21,7 @@ export const VerseDetailModal: React.FC<VerseDetailModalProps> = ({
   onClose,
   onOpenQuoteCard,
 }) => {
-  const [isPlayingChant, setIsPlayingChant] = useState(false);
-
-  useEffect(() => {
-    // If modal closes, don't necessarily stop audio unless user wants
-    return () => {
-      // cleanups
-    };
-  }, []);
-
   if (!isOpen || !verse) return null;
-
-  const handleToggleChant = () => {
-    if (isPlayingChant) {
-      SanskritAudio.stop();
-      setIsPlayingChant(false);
-    } else {
-      setIsPlayingChant(true);
-      SanskritAudio.playShlokaChant(
-        verse.sanskrit,
-        verse.transliteration,
-        () => setIsPlayingChant(false)
-      );
-    }
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#4B3825]/35 backdrop-blur-md animate-fade-in overflow-y-auto">
@@ -74,10 +48,7 @@ export const VerseDetailModal: React.FC<VerseDetailModalProps> = ({
           </div>
 
           <button
-            onClick={() => {
-              if (isPlayingChant) SanskritAudio.stop();
-              onClose();
-            }}
+            onClick={onClose}
             className="p-2 rounded-xl text-[#6A5A48]/70 hover:text-[#2C261F] hover:bg-[#FFFDF8] transition-colors"
           >
             <X className="w-5 h-5" />
@@ -91,30 +62,6 @@ export const VerseDetailModal: React.FC<VerseDetailModalProps> = ({
             <span className="absolute top-2.5 left-3 font-cinzel text-[10px] text-[#C5A059]/60 uppercase tracking-widest">
               Original Sanskrit
             </span>
-
-            {/* Chanting Action Button */}
-            <div className="absolute top-2.5 right-3">
-              <button
-                onClick={handleToggleChant}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-cinzel font-semibold transition-all ${
-                  isPlayingChant
-                    ? 'bg-[#E28743] text-[#F4ECE1] shadow-[0_0_15px_rgba(255,183,3,0.4)]'
-                    : 'bg-[#F4ECE1] border border-[#C5A059]/30 text-[#2C261F] hover:border-[#E28743]/50'
-                }`}
-              >
-                {isPlayingChant ? (
-                  <>
-                    <Volume2 className="w-3.5 h-3.5 animate-pulse text-[#F4ECE1]" />
-                    <span>Chanting Active...</span>
-                  </>
-                ) : (
-                  <>
-                    <VolumeX className="w-3.5 h-3.5 text-[#C5A059]" />
-                    <span>Listen Vedic Chant</span>
-                  </>
-                )}
-              </button>
-            </div>
 
             <div className="my-4">
               <p className="font-sanskrit text-2xl md:text-3xl leading-relaxed text-[#FFF8E7] font-medium tracking-wide drop-shadow-sm whitespace-pre-line">
@@ -177,10 +124,7 @@ export const VerseDetailModal: React.FC<VerseDetailModalProps> = ({
           </button>
 
           <button
-            onClick={() => {
-              if (isPlayingChant) SanskritAudio.stop();
-              onClose();
-            }}
+            onClick={onClose}
             className="px-5 py-2.5 rounded-xl bg-[#FFFDF8] border border-[#C5A059]/20 text-[#6A5A48] hover:text-[#2C261F] font-cinzel text-xs font-semibold transition-colors"
           >
             Close

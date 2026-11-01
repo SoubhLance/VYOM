@@ -1,0 +1,984 @@
+html:has(.gita-book-reader),
+body:has(.gita-book-reader),
+#root:has(.gita-book-reader) {
+  height: 100dvh;
+  min-height: 0;
+}
+
+.relative.isolate:has(.gita-book-reader) {
+  height: 100dvh;
+}
+
+.gita-book-reader {
+  min-height: 0;
+  max-height: 100dvh;
+}
+
+.gita-book-toolbar {
+  position: relative;
+  z-index: 4;
+  max-width: 100%;
+}
+
+.gita-book-scene {
+  position: relative;
+  display: grid;
+  flex: 1 1 auto;
+  place-items: center;
+  min-height: 0;
+  background: radial-gradient(ellipse at center, rgba(250, 246, 235, 0.94) 0%, rgba(250, 246, 235, 0.68) 52%, rgba(226, 185, 107, 0.14) 100%);
+  perspective: 1200px;
+  transform-style: preserve-3d;
+}
+
+.gita-front-cover,
+.gita-book-pages-view {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+.gita-front-cover {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  width: min(460px, calc(100% - 20px));
+  height: auto;
+  min-height: min(620px, calc(100dvh - 150px));
+  max-height: min(680px, calc(100dvh - 150px));
+  aspect-ratio: 1 / 1.45;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  overflow: hidden;
+  inset: auto;
+  border: 2px solid rgba(197, 160, 89, 0.75);
+  border-radius: 0.2rem 0.9rem 0.9rem 0.2rem;
+  padding: clamp(1.1rem, 3.5dvh, 2rem) clamp(1rem, 3.5vw, 2rem) clamp(1rem, 3dvh, 1.65rem) clamp(2.25rem, 5vw, 3rem);
+  color: #FAF6EB;
+  background: linear-gradient(90deg, #24060B 0%, #3D0A13 18%, #2E070D 100%);
+  box-shadow: inset 16px 0 24px rgba(0, 0, 0, 0.7), 0 25px 50px rgba(0, 0, 0, 0.5), inset 0 0 0 5px rgba(197, 160, 89, 0.2);
+  transform-origin: left center;
+}
+
+.gita-front-cover::before {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  content: '';
+  inset: 10px;
+  border: 1px solid rgba(197, 160, 89, 0.82);
+  border-radius: 0.1rem 0.65rem 0.65rem 0.1rem;
+  box-shadow: inset 0 0 0 4px rgba(197, 160, 89, 0.12), inset 0 0 0 6px rgba(36, 6, 11, 0.52);
+}
+
+.gita-front-cover::after {
+  position: absolute;
+  z-index: 0;
+  top: 1rem;
+  bottom: 1rem;
+  left: 1rem;
+  width: 4px;
+  border-right: 1px solid rgba(250, 246, 235, 0.36);
+  background: linear-gradient(90deg, #6B4A20, #E2B96B 48%, #8E6328);
+  box-shadow: 3px 0 8px rgba(0, 0, 0, 0.42);
+  content: '';
+}
+
+.gita-cover-header,
+.gita-cover-art-frame,
+.gita-cover-bottom {
+  position: relative;
+  z-index: 1;
+}
+
+.gita-cover-header {
+  width: 100%;
+  flex: 0 0 auto;
+  text-align: center;
+}
+
+.gita-cover-inscription {
+  display: block;
+  color: #C5A059;
+  font-size: 0.68rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+}
+
+.gita-cover-art-frame {
+  display: grid;
+  width: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  place-items: center;
+  overflow: hidden;
+  padding: 6px;
+  border: 2px solid rgba(197, 160, 89, 0.65);
+  border-radius: 0.35rem;
+  background: #24060B;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.36), 0 0 0 1px rgba(226, 185, 107, 0.24);
+}
+
+.gita-cover-art-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  background: #FAF6EB;
+}
+
+.gita-cover-devanagari {
+  margin: 0.35rem 0 0;
+  color: #F5E6B3;
+  font-size: clamp(1.5rem, 2.8vw, 1.9rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.5;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.55);
+}
+
+.gita-cover-roman {
+  margin: 0.18rem 0 0;
+  color: #D4AF37;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+}
+
+.gita-cover-separator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  margin-top: 0.5rem;
+  color: #C5A059;
+  font-size: 0.8rem;
+}
+
+.gita-cover-separator span {
+  width: 2.4rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #C5A059);
+}
+
+.gita-cover-separator span:last-child {
+  transform: rotate(180deg);
+}
+
+.gita-cover-bottom {
+  width: 100%;
+  flex: 0 0 auto;
+  text-align: center;
+}
+
+.gita-cover-subtitle {
+  margin: 0;
+  color: #CBB598;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.72rem;
+  font-style: italic;
+  letter-spacing: 0.08em;
+}
+
+.gita-cover-open-button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+  padding: 0.75rem 0.55rem;
+  border: 1px solid #E2B96B;
+  border-radius: 0.35rem;
+  color: #2C1810;
+  background: linear-gradient(90deg, #C5A059, #E2B96B 50%, #C5A059);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(250, 246, 235, 0.4);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: box-shadow 300ms ease, transform 300ms ease, background 300ms ease;
+}
+
+.gita-cover-open-button:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(90deg, #D4AF37, #E2B96B 50%, #C5A059);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.36), 0 0 16px rgba(197, 160, 89, 0.24);
+}
+
+.gita-cover-open-button .font-sanskrit {
+  color: #2C1810;
+  font-size: 0.86rem;
+  letter-spacing: 0.03em;
+}
+
+.gita-cover-back-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.55rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid rgba(197, 160, 89, 0.48);
+  border-radius: 0.45rem;
+  color: #FAF6EB;
+  background: rgba(36, 6, 11, 0.32);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: border-color 180ms ease, color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.gita-cover-back-button:hover {
+  border-color: #C5A059;
+  color: #E2B96B;
+  background: rgba(36, 6, 11, 0.6);
+  box-shadow: 0 0 12px rgba(197, 160, 89, 0.2);
+}
+
+.gita-book-pages-view {
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  transform-origin: left center;
+}
+
+.gita-book-scene.is-closed .gita-book-pages-view {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: rotateY(-88deg);
+}
+
+.gita-book-scene.is-open .gita-front-cover {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: rotateY(-88deg);
+}
+
+.gita-cover-return-button {
+  flex: 0 0 auto;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid rgba(197, 160, 89, 0.45);
+  border-radius: 0.65rem;
+  color: #704B20;
+  background: #FFFDF8;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.gita-cover-return-button:hover {
+  border-color: #C5A059;
+  background: #F4ECE1;
+}
+
+.gita-book-cover {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid #C5A059;
+  background: linear-gradient(135deg, #67212a, #43131b 58%, #5a1a23);
+  box-shadow: 0 12px 30px rgba(44, 25, 20, 0.25), inset 0 0 0 2px rgba(197, 160, 89, 0.45), inset 0 0 0 5px rgba(68, 18, 25, 0.75);
+}
+
+.gita-book-cover::before {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  content: '';
+  inset: 5px;
+  border: 1px solid rgba(226, 197, 133, 0.65);
+  border-radius: 0.95rem;
+}
+
+.gita-book-spread {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  gap: 12px;
+  padding: 10px;
+  perspective: 1800px;
+}
+
+.gita-book-page {
+  position: relative;
+  display: flex;
+  flex: 1 1 50%;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  color: #2C261F;
+  background-color: #FAF6EB;
+}
+
+.gita-book-left-page {
+  background-image: linear-gradient(90deg, transparent 0%, transparent 83%, rgba(0, 0, 0, 0.16) 100%), linear-gradient(145deg, #fffdf6 0%, #FAF6EB 46%, #f2e8d4 100%);
+  box-shadow: -4px 5px 0 -1px #e7dcc3, -7px 8px 0 -3px #d6c6a6, 0 8px 15px rgba(52, 33, 24, 0.17);
+}
+
+.gita-book-right-page {
+  background-image: linear-gradient(270deg, transparent 0%, transparent 83%, rgba(0, 0, 0, 0.16) 100%), linear-gradient(215deg, #fffdf6 0%, #FAF6EB 52%, #f2e8d4 100%);
+  box-shadow: 4px 5px 0 -1px #e7dcc3, 7px 8px 0 -3px #d6c6a6, 0 8px 15px rgba(52, 33, 24, 0.17);
+}
+
+.gita-page-running-head {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  min-height: 44px;
+  margin: 0 1.6rem;
+  border-bottom: 1px solid rgba(197, 160, 89, 0.52);
+  color: #704B20;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.65rem;
+  font-variant: small-caps;
+  letter-spacing: 0.055em;
+  text-align: center;
+}
+
+.gita-page-running-head .font-sanskrit {
+  color: #8C2D19;
+  font-size: 0.8rem;
+  letter-spacing: 0;
+}
+
+.gita-running-title {
+  max-width: 42%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gita-right-running-head {
+  justify-content: space-between;
+  padding-right: 1.25rem;
+}
+
+.gita-page-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #C5A059 rgba(197, 160, 89, 0.12);
+  overscroll-behavior: contain;
+}
+
+.gita-page-scroll::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.gita-page-scroll::-webkit-scrollbar-track {
+  background: rgba(197, 160, 89, 0.12);
+}
+
+.gita-page-scroll::-webkit-scrollbar-thumb {
+  border-radius: 8px;
+  background: rgba(162, 116, 39, 0.62);
+}
+
+.gita-sanskrit-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.25rem 2rem 1rem 1.6rem;
+}
+
+.gita-speaker-label {
+  margin: 0 0 0.5rem;
+  color: #704B20;
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.gita-page-ornament {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 1.05rem 0 1.2rem;
+  color: #A27427;
+  font-size: 0.8rem;
+}
+
+.gita-page-ornament i {
+  width: clamp(1.25rem, 5vw, 3.4rem);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #C5A059, transparent);
+}
+
+.gita-sanskrit-lines {
+  color: #2C241E;
+  font-family: 'Tiro Devanagari Sanskrit', 'Noto Serif Devanagari', serif;
+  font-size: clamp(1.44rem, 2.3vw, 2.07rem);
+  font-weight: 500;
+  line-height: 1.9;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.gita-sanskrit-lines p {
+  margin: 0 0 0.3rem;
+}
+
+.gita-verse-end {
+  padding-top: 0.3rem;
+  color: #704B20;
+  font-size: 0.95rem;
+  letter-spacing: 0.1em;
+}
+
+.gita-transliteration {
+  margin: 1.3rem 0 0;
+  color: #574638;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.9rem;
+  font-style: italic;
+  line-height: 1.7;
+  text-align: center;
+}
+
+.gita-page-number {
+  flex: 0 0 auto;
+  padding: 0.6rem 1.6rem 0.8rem;
+  color: #704B20;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+}
+
+.gita-page-number-left {
+  text-align: left;
+}
+
+.gita-page-number-right {
+  text-align: right;
+}
+
+.gita-page-turn {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  transform-origin: left center;
+  backface-visibility: hidden;
+}
+
+.gita-meaning-content {
+  padding: 1.2rem 1.8rem 1rem;
+}
+
+.gita-meaning-heading {
+  margin: 0 0 0.85rem;
+  color: #8C2D19;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.05rem;
+  font-variant: small-caps;
+  letter-spacing: 0.08em;
+}
+
+.gita-translation-heading-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.gita-translation-heading-row .gita-meaning-heading {
+  margin-bottom: 0.85rem;
+}
+
+.gita-translation-info {
+  display: inline-grid;
+  width: 1rem;
+  height: 1rem;
+  margin-top: -0.7rem;
+  place-items: center;
+  border: 1px solid #A27427;
+  border-radius: 50%;
+  color: #704B20;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.68rem;
+  font-style: italic;
+  cursor: help;
+}
+
+.gita-translation-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.65rem;
+  color: #574638;
+  font-size: 0.72rem;
+}
+
+.gita-translation-picker select {
+  max-width: min(70%, 17rem);
+  border: 1px solid rgba(197, 160, 89, 0.55);
+  border-radius: 0.45rem;
+  padding: 0.25rem 0.4rem;
+  color: #4B3825;
+  background: #FFFDF8;
+  font-size: 0.72rem;
+}
+
+.gita-translation-author,
+.gita-translation-status {
+  margin: 0.45rem 0 1rem;
+  color: #574638;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.72rem;
+  font-style: italic;
+}
+
+.gita-translation {
+  margin: 0;
+  color: #2C261F;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1rem, 1.4vw, 1.18rem);
+  line-height: 1.8;
+}
+
+.gita-translation::first-letter {
+  float: left;
+  margin: 0.07em 0.04em 0 0;
+  color: #8C2D19;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 3.2em;
+  line-height: 0.78;
+}
+
+.gita-reflection {
+  margin: 1.35rem 0 1.5rem 1.1rem;
+  padding: 0.2rem 0 0.2rem 1rem;
+  border-left: 2px solid #C5A059;
+  color: #514334;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.88rem;
+  font-style: italic;
+  line-height: 1.7;
+}
+
+.gita-reflection h3 {
+  margin: 0 0 0.45rem;
+  color: #704B20;
+  font-size: 0.78rem;
+  font-style: normal;
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+}
+
+.gita-reflection p {
+  margin: 0;
+}
+
+.gita-recitation-plate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1.35rem;
+  padding: 0.85rem;
+  border: 1px solid rgba(197, 160, 89, 0.62);
+  background: linear-gradient(135deg, rgba(255, 253, 248, 0.9), rgba(241, 224, 187, 0.42));
+  box-shadow: inset 0 0 0 3px rgba(197, 160, 89, 0.12), 0 3px 8px rgba(82, 56, 31, 0.08);
+}
+
+.gita-recitation-copy,
+.gita-recitation-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.gita-recitation-icon {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(197, 160, 89, 0.5);
+  border-radius: 50%;
+  color: #8C2D19;
+  background: #F1E0BB;
+}
+
+.gita-recitation-copy h3 {
+  margin: 0;
+  color: #4B3825;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.gita-recitation-copy p {
+  margin: 0.15rem 0 0;
+  color: #574638;
+  font-size: 0.68rem;
+}
+
+.gita-recitation-actions label {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #574638;
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+
+.gita-recitation-actions input {
+  accent-color: #8C2D19;
+}
+
+.gita-recitation-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid #8C2D19;
+  border-radius: 0.65rem;
+  color: #FFF9EA;
+  background: #8C2D19;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.gita-recitation-actions button:hover {
+  background: #722312;
+}
+
+.gita-bookmark {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  right: 1.35rem;
+  width: 1.15rem;
+  height: 4.1rem;
+  background: linear-gradient(90deg, #681b25, #8C2D19 54%, #681b25);
+  filter: drop-shadow(2px 3px 2px rgba(34, 18, 14, 0.24));
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%);
+}
+
+.gita-book-navigation button {
+  min-height: 2.35rem;
+}
+
+.gita-contents-layer {
+  position: fixed;
+  z-index: 80;
+  inset: 0;
+  display: flex;
+  align-items: stretch;
+  background: rgba(37, 24, 18, 0.42);
+  backdrop-filter: blur(2px);
+}
+
+.gita-contents-drawer {
+  display: flex;
+  width: min(360px, 90vw);
+  height: 100%;
+  flex-direction: column;
+  border-right: 1px solid #C5A059;
+  background: #FAF6EB;
+  box-shadow: 12px 0 35px rgba(37, 24, 18, 0.22);
+  animation: gita-drawer-in 220ms ease-out both;
+}
+
+.gita-contents-drawer > header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.15rem 1.25rem;
+  border-bottom: 1px solid rgba(197, 160, 89, 0.45);
+}
+
+.gita-contents-drawer > header p {
+  margin: 0;
+  color: #8C2D19;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.05rem;
+  font-variant: small-caps;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.gita-contents-drawer > header span {
+  color: #574638;
+  font-size: 0.75rem;
+}
+
+.gita-contents-drawer > header button {
+  display: grid;
+  width: 2.3rem;
+  height: 2.3rem;
+  place-items: center;
+  border: 1px solid rgba(197, 160, 89, 0.45);
+  border-radius: 0.7rem;
+  color: #704B20;
+  background: #FFFDF8;
+}
+
+.gita-contents-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0.8rem;
+  scrollbar-width: thin;
+  scrollbar-color: #C5A059 #F4ECE1;
+}
+
+.gita-chapter-group {
+  margin-bottom: 0.3rem;
+}
+
+.gita-chapter-choice {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 0.12rem;
+  padding: 0.65rem 0.75rem;
+  border: 0;
+  border-left: 3px solid transparent;
+  color: #3E3328;
+  background: transparent;
+  text-align: left;
+}
+
+.gita-chapter-choice:hover,
+.gita-chapter-choice.is-active {
+  border-left-color: #C5A059;
+  background: #F1E0BB;
+}
+
+.gita-chapter-choice.is-active {
+  color: #762619;
+}
+
+.gita-chapter-name {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.78rem;
+  font-variant: small-caps;
+  font-weight: 700;
+}
+
+.gita-chapter-choice > .font-sanskrit {
+  color: #762619;
+  font-size: 0.78rem;
+}
+
+.gita-verse-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 0.3rem;
+  padding: 0.45rem 0.55rem 0.6rem;
+}
+
+.gita-verse-grid button {
+  min-height: 1.75rem;
+  border: 1px solid rgba(197, 160, 89, 0.38);
+  border-radius: 0.4rem;
+  color: #574638;
+  background: #FFFDF8;
+  font-size: 0.72rem;
+}
+
+.gita-verse-grid button:hover,
+.gita-verse-grid button.is-active {
+  border-color: #8C2D19;
+  color: #FFF9EA;
+  background: #8C2D19;
+}
+
+@keyframes gita-drawer-in {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@media (min-width: 768px) {
+  .gita-book-spread {
+    gap: 18px;
+  }
+
+  .gita-page-turn {
+    perspective: 1800px;
+  }
+}
+
+@media (max-width: 767px) {
+  .gita-book-cover {
+    overflow: hidden;
+  }
+
+  .gita-book-spread {
+    flex-direction: column;
+    gap: 0;
+    overflow-y: auto;
+    padding: 8px;
+    perspective: none;
+    scrollbar-width: thin;
+    scrollbar-color: #C5A059 rgba(197, 160, 89, 0.12);
+  }
+
+  .gita-book-page {
+    flex: 0 0 auto;
+    overflow: visible;
+    background-image: linear-gradient(180deg, #fffdf6, #FAF6EB 42%, #f6eedf);
+    box-shadow: none;
+  }
+
+  .gita-book-left-page {
+    min-height: clamp(340px, 48dvh, 510px);
+  }
+
+  .gita-book-right-page {
+    min-height: 390px;
+    border-top: 1px solid rgba(197, 160, 89, 0.45);
+  }
+
+  .gita-page-scroll {
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+
+  .gita-page-running-head {
+    margin-inline: 0.8rem;
+    font-size: 0.58rem;
+  }
+
+  .gita-sanskrit-content {
+    padding-inline: 0.65rem;
+  }
+
+  .gita-sanskrit-lines {
+    font-size: clamp(1.44rem, 6.9vw, 1.9rem);
+  }
+
+  .gita-page-number {
+    padding-inline: 0.8rem;
+  }
+
+  .gita-meaning-content {
+    padding: 1rem 0.8rem 1.1rem;
+  }
+
+  .gita-bookmark {
+    display: none;
+  }
+
+  .gita-page-turn {
+    height: auto;
+    min-height: 100%;
+    animation: none;
+  }
+
+  .gita-recitation-plate {
+    align-items: flex-start;
+  }
+
+  .gita-recitation-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .gita-contents-drawer {
+    width: 100%;
+    border-right: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) and (min-width: 768px) {
+  .gita-page-turn {
+    animation: gita-page-turn 300ms ease-out both;
+  }
+
+  @keyframes gita-page-turn {
+    from { transform: rotateY(-16deg); }
+    to { transform: rotateY(0); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gita-contents-drawer {
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .gita-book-reader .gita-book-spread {
+    perspective: 1200px;
+  }
+
+  .gita-book-reader .gita-page-turn {
+    animation-duration: 450ms;
+  }
+
+  .gita-book-scene.has-transition.is-open .gita-front-cover {
+    animation: gita-cover-open 720ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+  }
+
+  .gita-book-scene.has-transition.is-open .gita-book-pages-view {
+    animation: gita-pages-open 720ms cubic-bezier(0.2, 0.75, 0.25, 1) 80ms both;
+  }
+
+  .gita-book-scene.has-transition.is-closed .gita-book-pages-view {
+    animation: gita-pages-close 620ms cubic-bezier(0.55, 0, 0.8, 0.3) both;
+  }
+
+  .gita-book-scene.has-transition.is-closed .gita-front-cover {
+    animation: gita-cover-close 700ms cubic-bezier(0.2, 0.75, 0.25, 1) 60ms both;
+  }
+
+  @keyframes gita-cover-open {
+    0% { visibility: visible; opacity: 1; transform: rotateY(0); }
+    82% { visibility: visible; opacity: 0.35; transform: rotateY(-72deg); }
+    100% { visibility: hidden; opacity: 0; transform: rotateY(-88deg); }
+  }
+
+  @keyframes gita-pages-open {
+    0% { visibility: visible; opacity: 0; transform: rotateY(-88deg); }
+    28% { visibility: visible; opacity: 0.55; }
+    100% { visibility: visible; opacity: 1; transform: rotateY(0); }
+  }
+
+  @keyframes gita-pages-close {
+    0% { visibility: visible; opacity: 1; transform: rotateY(0); }
+    80% { visibility: visible; opacity: 0.3; transform: rotateY(72deg); }
+    100% { visibility: hidden; opacity: 0; transform: rotateY(88deg); }
+  }
+
+  @keyframes gita-cover-close {
+    0% { visibility: visible; opacity: 0; transform: rotateY(-88deg); }
+    100% { visibility: visible; opacity: 1; transform: rotateY(0); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gita-book-scene.is-closed .gita-front-cover {
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+  }
+
+  .gita-book-scene.is-open .gita-book-pages-view {
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+  }
+}

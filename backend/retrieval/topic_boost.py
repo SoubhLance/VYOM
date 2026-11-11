@@ -69,7 +69,20 @@ TOPIC_VERSES = {
         "2.38",
         "4.22",
     ],
+    "heaven": [
+        "9.20",
+        "9.21",
+        "8.16",
+    ],
+    # Violence questions also get the non-injury verse, so both sides are in context
+    "violence_balance": [
+        "16.2",
+    ],
 }
+
+# Topics whose keywords must not match a negated form ('non-violence', 'non violence');
+# 'nonviolence' is already excluded by the whole-word match
+NEGATION_EXCLUDED_TOPICS = {"war", "violence_balance"}
 
 TOPIC_KEYWORDS = {
     "food_meat": [
@@ -94,10 +107,12 @@ TOPIC_KEYWORDS = {
         "caste system",
     ],
     "war": [
-        "ahimsa",
         "is war",
         "war justified",
         "justify war",
+        "violence",
+        "violent",
+        "justify violence",
     ],
     "surrender": [
         "surrender",
@@ -131,6 +146,19 @@ TOPIC_KEYWORDS = {
         "fruits of action",
         "results of action",
     ],
+    "heaven": [
+        "heaven",
+        "heavens",
+        "heavenly",
+        "svarga",
+        "swarga",
+        "celestial",
+    ],
+    "violence_balance": [
+        "violence",
+        "violent",
+        "justify violence",
+    ],
 }
 
 
@@ -145,6 +173,8 @@ def boost_verses(query_or_subquestion: str) -> list[str]:
         for kw in keywords:
             # Whole-word, case-insensitive match
             pattern = r"(?<!\w)" + re.escape(kw) + r"(?!\w)"
+            if topic in NEGATION_EXCLUDED_TOPICS:
+                pattern = r"(?<!non[- \u2010\u2011])" + pattern
             if re.search(pattern, text, re.IGNORECASE):
                 if topic not in matched_topics:
                     matched_topics.append(topic)

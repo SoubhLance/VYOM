@@ -13,6 +13,7 @@ if str(ROOT) not in sys.path:
 
 from llm.client import generate_answer
 from retrieval.topic_boost import boost_verses
+from retrieval.router import parse_verse_refs
 
 logger = logging.getLogger("vyom.retrieval.multi")
 
@@ -32,7 +33,8 @@ MANDATORY RULES:
 3. If the query is already a single topic or cannot be divided, return an array with just that one query.
 4. Return strictly a JSON array of strings, e.g. ["sub-question 1", "sub-question 2"].
 5. Output no markdown formatting, no explanations, and no backticks outside the JSON array.
-6. Keep every distinctive term from the user query (for example ahimsa, naraka, celibacy) verbatim in its sub-question."""
+6. Keep every distinctive term from the user query (for example ahimsa, naraka, celibacy) verbatim in its sub-question.
+7. Keep every verse reference (for example 4.29, BG 2.47 or 2.19-2.20) verbatim in the sub-question it belongs to."""
 
 
 def extract_raw_clauses(query: str) -> list[str]:
@@ -257,16 +259,53 @@ def decompose(query: str) -> list[str]:
     return [clean_query]
 
 
+def assign_forced_refs(
+    forced_refs: list[str],
+    sub_questions: list[str],
+    raw_clauses: list[str],
+    clause_map: dict[int, str],
+    ref_aliases: dict[str, str] | None = None,
+) -> dict[str, list[int]]:
+    """Map each forced verse to the sub-question indices it belongs to.
+
+    A verse goes to the sub-question whose text names it; failing that, to the sub-question paired
+    with the raw clause that names it; failing that, to every sub-question. A companion verse
+    (ref_aliases: companion -> source reference) follows its source reference.
+    """
+    ref_aliases = ref_aliases or {}
+    anchors = {ref_aliases.get(r, r) for r in forced_refs}
+    sq_refs = [set(parse_verse_refs(sq, anchors)) for sq in sub_questions]
+    clause_to_idx = {c: i for i, c in clause_map.items()}
+    result: dict[str, list[int]] = {}
+    for r in forced_refs:
+        anchor = ref_aliases.get(r, r)
+        idxs = [i for i, refs in enumerate(sq_refs) if anchor in refs]
+        if not idxs:
+            for c in raw_clauses:
+                if c in clause_to_idx and anchor in parse_verse_refs(c, anchors):
+                    idxs = [clause_to_idx[c]]
+                    break
+        if not idxs:
+            idxs = list(range(len(sub_questions)))
+        result[r] = idxs
+    return result
+
+
 def retrieve_multi(
     searcher: Any,
     query: str,
     per_q: int = 5,
     cap: int = 12,
-    sub_questions: list[str] | None = None
+    sub_questions: list[str] | None = None,
+    forced_refs: list[str] | None = None,
+    ref_aliases: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Search each decomposed sub-question and its corresponding raw clause with searcher,
     guarantee that every sub-question keeps its own top 2 verses, merge duplicates,
     preserve question indices, and fill remaining slots up to `cap` by best score.
+    Verses in `forced_refs` (explicit verse references) are always kept, listed first, assigned to
+    their sub-question(s) and marked "forced"; they use up the best-score fill slots, never the
+    per-sub-question picks.
     Returns:
         {
             "sub_questions": [str, ...],
@@ -386,18 +425,42 @@ def retrieve_multi(
                     if score > merged[vid]["score"]:
                         merged[vid]["score"] = round(score, 4)
 
+    # Explicitly referenced verses are always in context, for the sub-question(s) that name them
+    forced_ids: list[str] = []
+    if forced_refs:
+        assignment = assign_forced_refs(forced_refs, sub_questions, raw_clauses, clause_map, ref_aliases)
+        top_score = max((v["score"] for v in merged.values()), default=1.0)
+        for r in forced_refs:
+            if r in forced_ids:
+                continue
+            forced_ids.append(r)
+            if r not in merged:
+                merged[r] = {"verse_id": r, "for_question": [], "score": round(top_score, 4)}
+            for idx in assignment[r]:
+                if idx not in merged[r]["for_question"]:
+                    merged[r]["for_question"].append(idx)
+            merged[r]["for_question"].sort()
+            merged[r]["forced"] = True
+        for idx in range(len(sub_questions)):
+            refs_for = [r for r in forced_ids if idx in assignment[r]]
+            if refs_for:
+                logger.info("FORCED_REFS: sq=%d -> %s", idx + 1, refs_for)
+
     # Collect guaranteed verses across all sub-questions
     guaranteed_vids: set[str] = set()
     for p in per_sq_picks.values():
         guaranteed_vids.update(p)
+    guaranteed_vids -= set(forced_ids)
 
+    forced_list = [merged[vid] for vid in forced_ids]
     guaranteed_list = [merged[vid] for vid in guaranteed_vids if vid in merged]
-    remaining = [v for vid, v in merged.items() if vid not in guaranteed_vids]
+    remaining = [v for vid, v in merged.items() if vid not in guaranteed_vids and vid not in forced_ids]
     remaining.sort(key=lambda x: -x["score"])
 
-    slots_left = max(0, cap - len(guaranteed_list))
+    slots_left = max(0, cap - len(guaranteed_list) - len(forced_list))
     final_verses = guaranteed_list + remaining[:slots_left]
     final_verses.sort(key=lambda x: -x["score"])
+    final_verses = forced_list + final_verses
 
     return {
         "sub_questions": sub_questions,

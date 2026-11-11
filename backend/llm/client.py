@@ -28,7 +28,13 @@ else:
 logger = logging.getLogger(__name__)
 
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+# llama-3.3-70b-versatile is Enterprise-tier on Groq now and returns 404 on this account,
+# so gpt-oss-120b is the default. Override with GROQ_MODEL.
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+# gpt-oss always reasons and its hidden reasoning tokens count toward max_tokens
+# (measured 2026-11-11: 801 of 950). Keep effort low and leave room for the visible answer.
+GPT_OSS_DEFAULT_REASONING_EFFORT = "low"
+DEFAULT_GROQ_MAX_TOKENS = "1800"
 OLLAMA_DEFAULT_URL = "http://localhost:11434/api/generate"
 OLLAMA_DEFAULT_MODEL = "llama3.2"
 DEFAULT_TIMEOUT = 30.0
@@ -104,7 +110,7 @@ def clean_truncated_answer(text: str) -> str:
     or paragraph before appending '(answer shortened)'. Never leave an unclosed quote mark."""
     stripped = text.strip()
     if not stripped:
-        return "(answer shortened)"
+        return ""
 
     # Look for candidate sentence boundaries:
     # 1. Punctuation [.!?] followed by optional quotes/parens
@@ -144,7 +150,8 @@ def clean_truncated_answer(text: str) -> str:
     while trimmed and not are_quotes_balanced(trimmed):
         trimmed = re.sub(r'[\s\S]$', '', trimmed).rstrip()
 
-    return f"{trimmed}\n\n(answer shortened)"
+    # No visible label: callers report truncation through the "truncated" warning.
+    return trimmed
 
 
 def _extract_status_code(e: Exception) -> int | None:
@@ -192,6 +199,21 @@ def _call_gemini(prompt: str, system_prompt: str, api_key: str) -> str:
     return text.strip()
 
 
+def _apply_reasoning_settings(kwargs: dict[str, Any]) -> None:
+    """Set reasoning parameters for the model in kwargs["model"].
+
+    gpt-oss models (every Groq call: answers and the LLM splitter) get reasoning_effort
+    (GROQ_REASONING_EFFORT, default "low") and include_reasoning=False so the reasoning text is
+    not returned. Other models only get reasoning_effort when GROQ_REASONING_EFFORT is set.
+    """
+    env_effort = (os.getenv("GROQ_REASONING_EFFORT") or "").strip()
+    if str(kwargs.get("model", "")).startswith("openai/gpt-oss"):
+        kwargs["reasoning_effort"] = env_effort or GPT_OSS_DEFAULT_REASONING_EFFORT
+        kwargs["include_reasoning"] = False
+    elif env_effort:
+        kwargs["reasoning_effort"] = env_effort
+
+
 def _call_groq(prompt: str, system_prompt: str, api_key: str, temperature: float = 0.2) -> tuple[str, str, bool]:
     """Invoke Groq using official groq SDK."""
     client = Groq(api_key=api_key, timeout=DEFAULT_TIMEOUT)
@@ -201,16 +223,14 @@ def _call_groq(prompt: str, system_prompt: str, api_key: str, temperature: float
     messages.append({"role": "user", "content": prompt})
 
     model_name = os.getenv("GROQ_MODEL", GROQ_MODEL)
-    max_tokens = int(os.getenv("GROQ_MAX_TOKENS", "950"))
+    max_tokens = int(os.getenv("GROQ_MAX_TOKENS", DEFAULT_GROQ_MAX_TOKENS))
     kwargs: dict[str, Any] = {
         "model": model_name,
         "messages": messages,
         "temperature": temperature,
         "max_tokens": max_tokens,
     }
-    reasoning_effort = os.getenv("GROQ_REASONING_EFFORT")
-    if reasoning_effort is not None and reasoning_effort.strip():
-        kwargs["reasoning_effort"] = reasoning_effort.strip()
+    _apply_reasoning_settings(kwargs)
 
     model_fallback_fired = False
     try:
@@ -218,7 +238,11 @@ def _call_groq(prompt: str, system_prompt: str, api_key: str, temperature: float
     except Exception as e:
         # If default llama-3.3-70b-versatile is not accessible on the account, fallback to active model
         if "model_not_found" in str(e).lower() and model_name != "openai/gpt-oss-120b":
+            logger.warning("Groq model %s not found; falling back to openai/gpt-oss-120b", model_name)
             kwargs["model"] = "openai/gpt-oss-120b"
+            kwargs.pop("reasoning_effort", None)
+            kwargs.pop("include_reasoning", None)
+            _apply_reasoning_settings(kwargs)
             completion = client.chat.completions.create(**kwargs)
             model_fallback_fired = True
         else:

@@ -15,6 +15,26 @@ CITATION_PATTERN = re.compile(
 DANGLING_PREFIXES = ('This verse', 'This passage', 'This suggests', 'Here,', 'It ')
 
 
+_PARAPHRASE_IN_QUOTES = re.compile(r'["“”]([^"“”\n]+?)["“”](\s*)(\(\s*paraphrase\s*,)', re.IGNORECASE)
+# Single-quoted spans: opener not preceded by a word character, closer not followed by one
+_SINGLE_QUOTED = re.compile(r"(?<![\w’'])[‘']([^‘’'\n]+?)[’'](?![\w])")
+
+
+def unquote_paraphrases(text: str) -> str:
+    """A quoted span directly followed by '(paraphrase, ...' is the model's own wording:
+    drop the quotation marks, keep the text and the marker."""
+    return _PARAPHRASE_IN_QUOTES.sub(lambda m: f"{m.group(1)}{m.group(2)}{m.group(3)}", text)
+
+
+def normalize_single_quotes(text: str, min_words: int = 5) -> str:
+    """Turn single-quoted spans of min_words+ words into curly double quotes so the
+    verifier checks them like any other quote. Shorter spans (scare quotes, terms) are left alone."""
+    def _repl(m: re.Match) -> str:
+        inner = m.group(1)
+        return f"“{inner}”" if len(inner.split()) >= min_words else m.group(0)
+    return _SINGLE_QUOTED.sub(_repl, text)
+
+
 def normalize_text(text: str) -> str:
     """Normalize text by converting to lowercase, stripping markdown asterisks and underscores,
     removing punctuation, and collapsing whitespace."""
@@ -134,6 +154,45 @@ def extract_candidate_translations_by_verse(verses: list[dict[str, Any]]) -> dic
     return by_verse
 
 
+def extract_context_commentary_by_verse(verses: list[dict[str, Any]]) -> dict[str, list[str]]:
+    """Normalized commentary excerpts that were shown in the prompt (v['context_commentary']).
+
+    Only these excerpts count as quotable commentary; the full commentary records on a verse
+    were never shown to the model and are ignored.
+    """
+    by_verse: dict[str, list[str]] = {}
+    for v in verses:
+        vid = str(v.get("verse_id", "")).strip()
+        texts = [c.get("text", "") for c in v.get("context_commentary") or [] if isinstance(c, dict)]
+        by_verse[vid] = [normalize_text(t) for t in texts if t]
+    return by_verse
+
+
+def accepted_texts_by_verse(verses: list[dict[str, Any]]) -> dict[str, list[str]]:
+    """Translations plus any commentary excerpt shown in the prompt, keyed by verse_id.
+    Used for verbatim (exact) quote acceptance only."""
+    merged = extract_candidate_translations_by_verse(verses)
+    for vid, texts in extract_context_commentary_by_verse(verses).items():
+        merged.setdefault(vid, []).extend(texts)
+    return merged
+
+
+def best_matching_translation(quote_text: str, record: dict[str, Any]) -> str | None:
+    """Return the English translation of `record` with the highest fuzzy overlap to the quote."""
+    translations = record.get("translations")
+    if isinstance(translations, dict):
+        eng = translations.get("english", [])
+    elif isinstance(translations, list):
+        eng = translations
+    else:
+        eng = []
+    texts = [t["text"] if isinstance(t, dict) else t for t in eng if (isinstance(t, dict) and t.get("text")) or (isinstance(t, str) and t)]
+    if not texts:
+        return None
+    norm_q = normalize_text(quote_text)
+    return max(texts, key=lambda t: fuzzy_overlap_ratio(norm_q, normalize_text(t)))
+
+
 def check_quotes(answer_text: str, verses: list[dict[str, Any]]) -> dict[str, list[str]]:
     """Extract quoted strings (inside \"...\" or “...”) of 6 or more words from the answer,
     normalize them, and verify whether each is a substring of any English translation
@@ -187,7 +246,7 @@ def check_quotes_by_citation(
             "uncited": [str, ...]
         }
     """
-    trans_by_verse = extract_candidate_translations_by_verse(verses)
+    trans_by_verse = accepted_texts_by_verse(verses)
     paragraphs = [p.strip() for p in re.split(r'\n\s*\n', answer_text) if p.strip()]
 
     citation_pattern = re.compile(
@@ -424,6 +483,7 @@ def resolve_quotes_and_citations(
         log them server-side.
     """
     ctx_trans = extract_candidate_translations_by_verse(context_verses)
+    ctx_accepted = accepted_texts_by_verse(context_verses)
     warnings: list[str] = []
     modified_answer = answer
     sentences_removed = 0
@@ -461,7 +521,7 @@ def resolve_quotes_and_citations(
             # Case A: Quote has a citation
             if cited_vid:
                 target_trans = ctx_trans.get(cited_vid, [])
-                is_exact = any(norm_q in t for t in target_trans)
+                is_exact = any(norm_q in t for t in ctx_accepted.get(cited_vid, []))
                 if is_exact:
                     logger.info("Quote '%s...' is verbatim verified for BG %s", quote_text[:30], cited_vid)
                     continue
@@ -473,7 +533,7 @@ def resolve_quotes_and_citations(
                 best_diff_score = 0.0
                 for ovid, otrans in ctx_trans.items():
                     if ovid != cited_vid:
-                        if any(norm_q in t for t in otrans):
+                        if any(norm_q in t for t in ctx_accepted.get(ovid, [])):
                             diff_vid = ovid
                             break
                         score = max((fuzzy_overlap_ratio(norm_q, t) for t in otrans), default=0.0)
@@ -481,14 +541,13 @@ def resolve_quotes_and_citations(
                             best_diff_score = score
                             diff_vid = ovid
 
-                # Branch 1: clear overlap >= 0.6 with cited verse -> replace with first translation
+                # Branch 1: clear overlap >= 0.6 with cited verse -> replace with best-matching translation
                 if cv_overlap >= 0.6:
                     rec = verse_store.get(cited_vid, {})
-                    eng = rec.get("translations", {}).get("english", [])
-                    first_trans = eng[0]["text"] if (eng and isinstance(eng[0], dict) and "text" in eng[0]) else None
-                    if first_trans:
+                    best_trans = best_matching_translation(quote_text, rec)
+                    if best_trans:
                         pat = re.compile(r'["“”]' + re.escape(quote_text) + r'["“”]')
-                        modified_answer = pat.sub(f'“{first_trans}”', modified_answer, count=1)
+                        modified_answer = pat.sub(lambda _m: f'“{best_trans}”', modified_answer, count=1)
                         logger.info("Replaced quote with verified translation for BG %s: %s...", cited_vid, quote_text[:30])
                     # Corrected in place: log server-side, do not send warning to client
 
@@ -520,7 +579,7 @@ def resolve_quotes_and_citations(
                 found_vid = None
                 best_diff_score = 0.0
                 for ovid, otrans in ctx_trans.items():
-                    if any(norm_q in t for t in otrans):
+                    if any(norm_q in t for t in ctx_accepted.get(ovid, [])):
                         found_vid = ovid
                         break
                     score = max((fuzzy_overlap_ratio(norm_q, t) for t in otrans), default=0.0)

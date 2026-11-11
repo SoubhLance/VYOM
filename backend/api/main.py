@@ -37,11 +37,20 @@ from llm.client import (
     get_last_fallback_used,
 )
 from retrieval.prompt import SYSTEM_PROMPT, build_rag_prompt
-from retrieval.router import load_valid_ids, parse_verse_ref
+from retrieval.router import (
+    load_valid_ids,
+    parse_verse_ref,
+    parse_verse_refs,
+    build_forced_refs,
+    ch13_companion,
+    numbering_note,
+)
 from retrieval.search import Searcher
 from retrieval.multi import retrieve_multi, decompose, is_single_topic_query
-from retrieval.prompt_v2 import SYSTEM_PROMPT_V2, build_rag_prompt_v2
+from retrieval.prompt_v2 import SYSTEM_PROMPT_V2, build_rag_prompt_v2, commentary_excerpt
 from retrieval.verify_quotes import (
+    unquote_paraphrases,
+    normalize_single_quotes,
     check_quotes_by_citation,
     normalize_text,
     fuzzy_overlap_ratio,
@@ -285,17 +294,77 @@ def health_check():
     }
 
 
+_META_ADJ = r'(?:supplied|provided|given|retrieved)'
+_META_NOUN = r'(verses?|passages?|context|texts?|translations?|material|excerpts?)'
+_META_BEFORE = re.compile(r'\b(?:the\s+)?' + _META_ADJ + r'\s+' + _META_NOUN + r'\b', re.IGNORECASE)
+_META_AFTER = re.compile(
+    r'\b(?:the\s+)?' + _META_NOUN + r'\s+' + _META_ADJ
+    + r'(?:\s+(?:to\s+me|here|above|for\s+this\s+(?:question|query)))?\b',
+    re.IGNORECASE,
+)
+
+
+# 'set'-type nouns only after a meta adjective and 'the', so 'a given set of rules' is untouched
+_META_GROUP = r'(?:set|list|selection|collection)(?:\s+of\s+(?:verses|passages|texts))?'
+_META_PLACE = r'(?:above|below|here|shown(?:\s+(?:above|below|here))?|listed(?:\s+above)?)'
+_META_SET = re.compile(r'\bthe\s+(?:supplied|provided|retrieved|shown|listed)\s+' + _META_GROUP + r'\b', re.IGNORECASE)
+_META_PLACED = re.compile(
+    r'\bthe\s+(verses?|passages?|texts?|excerpts?|translations?)\s+' + _META_PLACE + r'\b', re.IGNORECASE
+)
+# Phrases dropped whole: 'in the supplied set', 'among the verses above', 'in this context'
+# (never 'in the context of ...')
+_META_PREP_CORE = (
+    r'\b(?:in|from|among|within)\s+(?:the|this|these)\s+(?:(?:supplied|provided|retrieved|shown|listed)\s+'
+    + _META_GROUP + r'|(?:verses?|passages?|texts?|excerpts?|translations?)\s+' + _META_PLACE + r')\b'
+)
+_CONTEXT_CORE = r'\bin\s+(?:this|the)\s+context(?:\s+(?:above|provided|given|shown|here))?\b(?!\s+of\b)'
+
+
+def _drop_phrase(text: str, core: str) -> str:
+    """Remove a phrase as a parenthetical (', X,'), a sentence opener ('X, ...', re-capitalising what
+    follows) or anywhere else (with a comma just before it), keeping the sentence readable."""
+    text = re.sub(r',\s*' + core + r'\s*,', '', text, flags=re.IGNORECASE)
+    lead = re.compile(r'(^|(?<=[.!?]\s)|(?<=\n))(\s*)' + core + r'\s*,?\s*', re.IGNORECASE)
+    out, pos = [], 0
+    for m in lead.finditer(text):
+        if m.start() < pos:
+            continue
+        out.append(text[pos:m.start()])
+        out.append(m.group(2))
+        pos = m.end()
+        if pos < len(text):
+            out.append(text[pos].upper())
+            pos += 1
+    out.append(text[pos:])
+    return re.sub(r',?\s*' + core, '', ''.join(out), flags=re.IGNORECASE)
+
+
+_META_LEFTOVER = re.compile(
+    r'\b(?:supplied|retrieved)\b'
+    r'|\b(?:provided|given|shown)\s+(?:verses?|passages?|set|list|context|texts?|excerpts?|material)\b'
+    r'|\b(?:verses?|passages?)\s+(?:above|below)\b'
+    r'|\bin\s+(?:this|the)\s+context\b(?!\s+of\b)',
+    re.IGNORECASE,
+)
+
+
 def replace_supplied_phrases(text: str) -> str:
-    """Replace 'supplied/provided' + (verses|passages|context|text) with
-    'verses retrieved for this question' (case-insensitive, preserving leading capital)."""
-    pattern = re.compile(r'\b(supplied|provided)\s+(verses|passages|context|text)\b', re.IGNORECASE)
+    """Safety net for the prompt's no-meta-language rule.
+
+    Drops 'in the supplied set' / 'among the verses above' / 'in this context' (not 'in the context of'),
+    and rewrites 'the supplied set', 'the verses above', 'the supplied verses', 'the translations supplied'
+    or 'verses retrieved for this question' to 'these verses' / 'these translations' (keeping a leading capital).
+    """
     def _repl(m: re.Match) -> str:
-        word = m.group(1)
-        if word[0].isupper():
-            return "Verses retrieved for this question"
-        else:
-            return "verses retrieved for this question"
-    return pattern.sub(_repl, text)
+        noun = m.group(1).lower()
+        out = "these translations" if noun.startswith("translation") else "these verses"
+        return out.capitalize() if m.group(0)[0].isupper() else out
+
+    text = _drop_phrase(text, _META_PREP_CORE)
+    text = _drop_phrase(text, _CONTEXT_CORE)
+    text = _META_SET.sub(lambda m: "These verses" if m.group(0)[0].isupper() else "these verses", text)
+    text = _META_PLACED.sub(_repl, text)
+    return _META_AFTER.sub(_repl, _META_BEFORE.sub(_repl, text))
 
 
 VERB_BASE_MAP = {
@@ -309,20 +378,44 @@ VERB_BASE_MAP = {
 }
 
 
+NO_DIRECT_ADDRESS = "The text doesn't address this directly"
+
+_GITA_DOES_NOT = re.compile(
+    r'\b(the)\s+(?:bhagavad\s+)?gita\s+(?:does\s*not|doesn[\'’]t|never)\s+'
+    r'(state[s]?|say[s]?|mention[s]?|discuss(?:es)?|explicitly|address(?:es)?|prohibit[s]?|require[s]?)\b',
+    re.IGNORECASE,
+)
+_CLAUSE_END = re.compile(r'[.!?;:—–\n]|,\s*(?:but|yet|though|although|however|instead|so)\b', re.IGNORECASE)
+_QUOTE_OR_CITATION = re.compile(r'["“”]|\(\s*(?:BG|paraphrase)', re.IGNORECASE)
+
+
 def rewrite_gita_does_not(text: str) -> str:
-    """Rewrite 'The Gita (does not|doesn't|never) (state|say|mention|discuss|explicitly|address|prohibit|require)'
-    to 'The verses retrieved for this question do not ...' keeping the verb.
-    Case-insensitive, keep a leading capital.
+    """Rewrite a claim about what the Gita as a whole does not say into the prompt's wording
+    "The text doesn't address this directly", replacing the claim up to the end of its clause
+    ('The Gita does not mention mosquitoes, but ...' -> "The text doesn't address this directly, but ...").
+    If that clause carries a quote or citation, keep it and only rewrite the subject
+    ('The Gita does not prohibit X (BG 3.8)' -> 'The text does not prohibit X (BG 3.8)').
+    Case-insensitive; a lowercase 'the' mid-sentence stays lowercase. Never introduces meta phrasing.
     """
-    pattern = re.compile(
-        r'\bthe\s+gita\s+(?:does\s*not|doesn[\'’]t|never)\s+(state[s]?|say[s]?|mention[s]?|discuss(?:es)?|explicitly|address(?:es)?|prohibit[s]?|require[s]?)\b',
-        re.IGNORECASE
-    )
-    def _repl(m: re.Match) -> str:
-        raw_verb = m.group(1)
-        base_verb = VERB_BASE_MAP.get(raw_verb.lower(), raw_verb)
-        return f"The verses retrieved for this question do not {base_verb}"
-    return pattern.sub(_repl, text)
+    out: list[str] = []
+    pos = 0
+    for m in _GITA_DOES_NOT.finditer(text):
+        if m.start() < pos:
+            continue
+        end_m = _CLAUSE_END.search(text, m.end())
+        end = end_m.start() if end_m else len(text)
+        lead = "The" if m.group(1)[0].isupper() else "the"
+        out.append(text[pos:m.start()])
+        if _QUOTE_OR_CITATION.search(text[m.end():end]):
+            raw_verb = m.group(2)
+            base_verb = VERB_BASE_MAP.get(raw_verb.lower(), raw_verb)
+            out.append(f"{lead} text does not {base_verb}")
+            pos = m.end()
+        else:
+            out.append(lead + NO_DIRECT_ADDRESS[3:])
+            pos = end
+    out.append(text[pos:])
+    return "".join(out)
 
 
 def relabel_unquoted_prose_citations(
@@ -405,6 +498,58 @@ def relabel_unquoted_prose_citations(
     return res_text
 
 
+_NON_ANSWER = re.compile(
+    r"\b(?:doesn['’]t|does\s+not|don['’]t|do\s+not)\s+(?:directly\s+)?address\b"
+    r"|\bthe\s+verses\s+themselves\s+(?:don['’]t|do\s+not)\s+say\b"
+    r"|\btraditionally\b"
+    r"|\bno\s+verse\b[^.!?\n]*?\b(?:gives?|says?|mentions?|address(?:es)?|states?|discuss(?:es)?|names?)\b",
+    re.IGNORECASE,
+)
+_CONTRAST = re.compile(r"[,;]\s*(?:but|yet|though|although|however|instead)\b|\s(?:but|however)\s", re.IGNORECASE)
+_SENTENCE_END = re.compile(r"[.!?](?=[\"”')\]]*(?:\s|$))|\n")
+_ANY_CITATION = re.compile(
+    r"\s*\((?:paraphrase\s*,\s*)?(?:BG\s*)?\d{1,2}\.\d{1,3}(?:\s*[-–,]\s*(?:\d{1,2}\.)?\d{1,3})*\)",
+    re.IGNORECASE,
+)
+
+
+def strip_non_answer_citations(text: str) -> str:
+    """Safety net for 'never cite a non-answer': remove '(BG x.y)' / '(paraphrase, BG x.y)' from the clause
+    that says the text doesn't address something (or gives the traditional view). The clause ends at the
+    sentence end or a contrast word, so '..., but it teaches non-injury (BG 16.2).' keeps its citation.
+    A clause containing a quotation is left alone."""
+    spans: list[tuple[int, int]] = []
+    for m in _NON_ANSWER.finditer(text):
+        start = 0
+        for b in _SENTENCE_END.finditer(text, 0, m.start()):
+            start = b.end()
+        for c in _CONTRAST.finditer(text, start, m.start()):
+            start = c.end()
+        e = _SENTENCE_END.search(text, m.end())
+        end = e.start() if e else len(text)
+        c = _CONTRAST.search(text, m.end(), end)
+        if c:
+            end = c.start()
+        spans.append((start, end))
+
+    out, pos = [], 0
+    for start, end in sorted(set(spans)):
+        start = max(start, pos)
+        if end <= start:
+            continue
+        clause = text[start:end]
+        if re.search(r'["“”]', clause):
+            continue
+        cleaned = _ANY_CITATION.sub("", clause)
+        if cleaned != clause:
+            logger.info("NON_ANSWER_CITATION_STRIPPED: %r", clause.strip()[:120])
+        out.append(text[pos:start])
+        out.append(cleaned)
+        pos = end
+    out.append(text[pos:])
+    return "".join(out)
+
+
 def find_prose_citations(answer: str) -> tuple[int, list[tuple[str, str]]]:
     """Find every 'BG x.y' or '(BG x.y)' in the final answer that is NOT
     directly after a closing quotation mark (ignoring allowed '(paraphrase, BG x.y)' markers).
@@ -443,6 +588,105 @@ def find_prose_citations(answer: str) -> tuple[int, list[tuple[str, str]]]:
     return len(prose_refs), prose_refs
 
 
+_PARAPHRASE_CITATION = re.compile(r'\(\s*paraphrase\s*,\s*(?:BG\s*)?([0-9]{1,2}\.[0-9]{1,2})\s*\)', re.IGNORECASE)
+_BARE_LABEL = re.compile(r'\s*\(\s*(?:paraphrase|my inference|inference)\s*\)', re.IGNORECASE)
+_INFERENCE_LEAD = re.compile(r'(^|(?<=[.!?]\s)|(?<=\n))\s*(?:my inference(?: is)?(?: that)?\s*[:,\-–—]?\s*)', re.IGNORECASE)
+
+
+def strip_internal_labels(text: str) -> str:
+    """Display clean-up: '(paraphrase, BG x.y)' -> '(BG x.y)'; drop '(paraphrase)' / '(my inference)'
+    and a leading 'My inference (is) (that):' (re-capitalising what follows)."""
+    text = _PARAPHRASE_CITATION.sub(lambda m: f'(BG {m.group(1)})', text)
+    text = _BARE_LABEL.sub('', text)
+
+    def _lead(m: re.Match) -> str:
+        return m.group(1)
+
+    out, pos = [], 0
+    for m in _INFERENCE_LEAD.finditer(text):
+        out.append(text[pos:m.start()])
+        out.append(_lead(m))
+        pos = m.end()
+        if pos < len(text):
+            out.append(text[pos].upper())
+            pos += 1
+    out.append(text[pos:])
+    return ''.join(out)
+
+
+def verify_and_clean_answer(
+    answer: str, context_verses: list[dict], verse_store: dict[str, dict]
+) -> tuple[str, list[str], int, int]:
+    """Quote verification and post-processing shared by the single-verse and multi paths.
+
+    Returns (answer, warnings, prose_citations_before, prose_citations_after).
+    """
+    warnings: list[str] = []
+    # Paraphrases never stay in quotation marks; single-quoted passages are verified like double-quoted ones
+    answer = unquote_paraphrases(normalize_single_quotes(answer))
+    answer, quote_warnings = resolve_quotes_and_citations(answer, context_verses, verse_store, strict_following=True)
+    warnings.extend(quote_warnings)
+
+    # Post-check quotes: any residual unverified or uncited quotes of 5+ words have their sentence removed
+    chk_after = check_quotes_by_citation(answer, context_verses, strict_following=True)
+    if chk_after["unverified"] or chk_after["uncited"]:
+        for item in chk_after["unverified"]:
+            q_txt = item.get("quote", "") if isinstance(item, dict) else str(item)
+            cv = item.get("cited_verse", "") if isinstance(item, dict) else ""
+            if len(q_txt.split()) >= 5:
+                answer, rem = remove_sentence_with_quote(answer, q_txt, cv)
+                logger.info("Removed residual unsupported quote statement for BG %s: %s", cv, repr(rem))
+                warnings.append("One unsupported statement was removed from the answer.")
+
+        for item in chk_after["uncited"]:
+            q_txt = item.get("quote", "") if isinstance(item, dict) else str(item)
+            if len(q_txt.split()) >= 5:
+                answer, rem = remove_sentence_with_quote(answer, q_txt, None)
+                logger.info("Removed residual unsupported uncited quote statement: %s", repr(rem))
+                warnings.append("One unsupported statement was removed from the answer.")
+
+        answer = ensure_no_empty_sections(answer)
+
+    chk_final = check_quotes_by_citation(answer, context_verses, strict_following=True)
+    logger.info(
+        "QUOTE CHECK FINAL COUNTS: verified=%d, unverified=%d, uncited=%d",
+        len(chk_final.get("verified", [])),
+        len(chk_final.get("unverified", [])),
+        len(chk_final.get("uncited", [])),
+    )
+
+    # Post-check prose citations & relabelling
+    prose_count_before, prose_refs = find_prose_citations(answer)
+    for cit_str, sent in prose_refs:
+        logger.warning("Prose citation '%s' not following quote: %s", cit_str, sent)
+    logger.info("PROSE_CITATIONS_COUNT_BEFORE: %d", prose_count_before)
+
+    # Post-processing:
+    # 5a: Rewrite meta phrases ('the supplied verses', 'the translations supplied', ...)
+    answer = replace_supplied_phrases(answer)
+    # 5b: Relabel unquoted prose citations
+    answer = relabel_unquoted_prose_citations(answer, context_verses, verse_store)
+    # 5c: Rewrite 'The Gita does not...' claims
+    answer = rewrite_gita_does_not(answer)
+    # 5c2: A non-answer never carries a citation
+    answer = strip_non_answer_citations(answer)
+
+    prose_count_after, prose_refs_after = find_prose_citations(answer)
+    for cit_str, sent in prose_refs_after:
+        logger.warning("REMAINING_PROSE_CITATION: citation='%s' | sentence='%s'", cit_str, sent)
+    logger.info("PROSE_CITATIONS_COUNT_AFTER: %d", prose_count_after)
+    logger.info("PROSE_CITATIONS_COUNT: %d (before: %d)", prose_count_after, prose_count_before)
+
+    # 5d: Readers never see internal labels
+    answer = strip_internal_labels(answer)
+
+    leak = _META_LEFTOVER.search(answer)
+    if leak:
+        logger.warning("META_LEAK_REMAINING: %r", leak.group(0))
+
+    return answer, warnings, prose_count_before, prose_count_after
+
+
 @app.post("/api/ask", response_model=AskResponse)
 def ask(req: AskRequest, request: Request, response: Response):
     """Endpoint to answer questions grounded in Bhagavad Gita verses:
@@ -468,14 +712,35 @@ def ask(req: AskRequest, request: Request, response: Response):
     if verse_store is None:
         verse_store = load_verse_store()
 
-    # Step 1: Check parse_verse_ref from router.py (Verse routing skips decomposition)
-    ref = parse_verse_ref(req.query, valid_ids)
+    # Step 1: Find every verse reference. Exactly one reference in a single-topic question keeps the
+    # single-verse path; any other question with references goes through decomposition (multi path).
+    refs = parse_verse_refs(req.query, valid_ids)
+    logger.info("VERSE_REFS_FOUND: %s", refs)
+    ref = refs[0] if len(refs) == 1 and is_single_topic_query(req.query) else None
+    if ref:
+        logger.info("ROUTE: single_verse ref=%s", ref)
+    elif refs:
+        logger.info("ROUTE: multi refs=%s", refs)
+    else:
+        logger.info("ROUTE: semantic multi=%s", req.multi)
 
     if ref:
         routed = True
         cited_verses = [ref]
-        retrieved_verses = [verse_store.get(ref, {"verse_id": ref})]
+        # Copy so the shared verse_store is never mutated
+        ref_rec = dict(verse_store.get(ref, {"verse_id": ref}))
+        excerpt = commentary_excerpt(ref_rec)
+        if excerpt:
+            ref_rec["context_commentary"] = [excerpt]
+        retrieved_verses = [ref_rec]
         context_verses = expand_verses_with_neighbors(retrieved_verses, verse_store)
+        # Chapter 13 uses 701-verse numbering here: tag the next verse instead of remapping
+        companion = ch13_companion(ref, valid_ids)
+        if companion:
+            context_verses = [
+                {**v, "numbering_note": numbering_note(companion)} if v.get("verse_id") == companion else v
+                for v in context_verses
+            ]
         sources = []
         for v in context_verses:
             vid = v.get("verse_id")
@@ -489,9 +754,9 @@ def ask(req: AskRequest, request: Request, response: Response):
                 "clips": clips_for(vid) if vid else [],
             })
 
-        prompt = build_rag_prompt(req.query, context_verses)
+        prompt = build_rag_prompt_v2(req.query, [req.query], context_verses)
         try:
-            answer = generate_answer(prompt, system_prompt=SYSTEM_PROMPT)
+            answer = generate_answer(prompt, system_prompt=SYSTEM_PROMPT_V2)
         except Exception as e:
             logger.error("LLM generation failed: %s", e, exc_info=True)
             raise HTTPException(
@@ -507,6 +772,12 @@ def ask(req: AskRequest, request: Request, response: Response):
         if response:
             response.headers["X-LLM-Model"] = str(model_used)
 
+        routed_warnings: list[str] = []
+        if get_last_finish_reason() == "length":
+            routed_warnings.append("truncated")
+        answer, verify_warnings, _, _ = verify_and_clean_answer(answer, context_verses, verse_store)
+        routed_warnings.extend(verify_warnings)
+
         return AskResponse(
             query=req.query,
             routed=True,
@@ -514,7 +785,7 @@ def ask(req: AskRequest, request: Request, response: Response):
             answer=answer,
             sources=sources,
             sub_questions=[],
-            warnings=[],
+            warnings=routed_warnings,
         )
 
     # Step 2: Non-routed queries
@@ -526,8 +797,8 @@ def ask(req: AskRequest, request: Request, response: Response):
             detail="Searcher engine is not ready or failed to initialize."
         )
 
-    if not req.multi:
-        # Default / Old path
+    if not req.multi and not refs:
+        # Default / Old path (questions with verse references always take the multi path)
         hits = searcher.search(req.query, k=req.top_k)
         if is_crisis_query(req.query):
             hits = [h for h in hits if not is_despair_verse(h.get("verse_id", ""))]
@@ -575,7 +846,7 @@ def ask(req: AskRequest, request: Request, response: Response):
             answer=answer,
             sources=sources,
             sub_questions=[],
-            warnings=[],
+            warnings=["truncated"] if get_last_finish_reason() == "length" else [],
         )
 
     # New path: req.multi is True
@@ -599,13 +870,24 @@ def ask(req: AskRequest, request: Request, response: Response):
         logger.info("DECOMPOSITION_SKIPPED: query is single topic ('%s')", req.query)
         sub_questions = [req.query.strip()]
     else:
-        logger.info("DECOMPOSITION_USED: query is compound/multi-topic ('%s')", req.query)
+        # decompose() logs DECOMPOSITION_USED / DECOMPOSITION_RULE_SPLIT itself
         sub_questions = decompose(req.query)
     t_decomp = time.perf_counter() - t_decomp_0
 
     # Stage 2: Retrieval & Context Assembly
     t_retrieval_0 = time.perf_counter()
-    multi_res = retrieve_multi(searcher, req.query, per_q=5, cap=12, sub_questions=sub_questions)
+    forced = build_forced_refs(refs, valid_ids)
+    if forced["dropped"]:
+        logger.warning("FORCED_REFS_TRUNCATED: kept %s, dropped %s", forced["refs"], forced["dropped"])
+    multi_res = retrieve_multi(
+        searcher,
+        req.query,
+        per_q=5,
+        cap=12,
+        sub_questions=sub_questions,
+        forced_refs=forced["refs"],
+        ref_aliases=forced["aliases"],
+    )
     sub_questions = multi_res.get("sub_questions", sub_questions)
     multi_verses = multi_res.get("verses", [])
 
@@ -621,6 +903,10 @@ def ask(req: AskRequest, request: Request, response: Response):
         base_rec = dict(verse_store.get(vid, {"verse_id": vid}))
         base_rec["for_question"] = mv.get("for_question", [])
         base_rec["score"] = mv.get("score", 0.0)
+        if vid in forced["refs"] and vid not in forced["aliases"]:
+            base_rec["requested"] = True
+        if vid in forced["notes"]:
+            base_rec["numbering_note"] = forced["notes"][vid]
         retrieved_verses.append(base_rec)
 
     if os.getenv("VYOM_MULTI_NEIGHBORS", "0") == "1":
@@ -655,7 +941,7 @@ def ask(req: AskRequest, request: Request, response: Response):
         logger.error("LLM generation failed: %s", e, exc_info=True)
         raise HTTPException(
             status_code=503,
-            detail=f"LLM generation failed: {e}"
+            detail="The guide is busy, please try again in a minute"
         )
 
     model_used = get_last_model() or getattr(answer, "model", None) or "unknown"
@@ -671,31 +957,12 @@ def ask(req: AskRequest, request: Request, response: Response):
 
     t_gen = time.perf_counter() - t_gen_0
 
-    # Stage 4: Verification & Resolution
+    # Stage 4: Verification & Resolution (shared with the single-verse path)
     t_verif_0 = time.perf_counter()
-    answer, quote_warnings = resolve_quotes_and_citations(answer, context_verses, verse_store, strict_following=True)
-    warnings.extend(quote_warnings)
-
-    # Post-check quotes: any residual unverified or uncited quotes of 5+ words have their sentence removed
-    chk_after = check_quotes_by_citation(answer, context_verses, strict_following=True)
-    if chk_after["unverified"] or chk_after["uncited"]:
-        for item in chk_after["unverified"]:
-            q_txt = item.get("quote", "") if isinstance(item, dict) else str(item)
-            cv = item.get("cited_verse", "") if isinstance(item, dict) else ""
-            if len(q_txt.split()) >= 5:
-                answer, rem = remove_sentence_with_quote(answer, q_txt, cv)
-                logger.info("Removed residual unsupported quote statement for BG %s: %s", cv, repr(rem))
-                warnings.append("One unsupported statement was removed from the answer.")
-
-        for item in chk_after["uncited"]:
-            q_txt = item.get("quote", "") if isinstance(item, dict) else str(item)
-            if len(q_txt.split()) >= 5:
-                answer, rem = remove_sentence_with_quote(answer, q_txt, None)
-                logger.info("Removed residual unsupported uncited quote statement: %s", repr(rem))
-                warnings.append("One unsupported statement was removed from the answer.")
-
-        answer = ensure_no_empty_sections(answer)
-
+    answer, verify_warnings, prose_count_before, prose_count_after = verify_and_clean_answer(
+        answer, context_verses, verse_store
+    )
+    warnings.extend(verify_warnings)
     t_verif = time.perf_counter() - t_verif_0
 
     t_total = time.perf_counter() - t_start
@@ -703,34 +970,6 @@ def ask(req: AskRequest, request: Request, response: Response):
         "TIMING: decomposition=%.3fs, retrieval=%.3fs, generation=%.3fs, verification=%.3fs | total=%.3fs",
         t_decomp, t_retrieval, t_gen, t_verif, t_total
     )
-
-    chk_final = check_quotes_by_citation(answer, context_verses, strict_following=True)
-    logger.info(
-        "QUOTE CHECK FINAL COUNTS: verified=%d, unverified=%d, uncited=%d",
-        len(chk_final.get("verified", [])),
-        len(chk_final.get("unverified", [])),
-        len(chk_final.get("uncited", [])),
-    )
-
-    # Task 4 & 5: Post-check prose citations & relabelling
-    prose_count_before, prose_refs = find_prose_citations(answer)
-    for cit_str, sent in prose_refs:
-        logger.warning("Prose citation '%s' not following quote: %s", cit_str, sent)
-    logger.info("PROSE_CITATIONS_COUNT_BEFORE: %d", prose_count_before)
-
-    # Post-processing:
-    # 5a: Replace supplied/provided phrases
-    answer = replace_supplied_phrases(answer)
-    # 5b: Relabel unquoted prose citations
-    answer = relabel_unquoted_prose_citations(answer, context_verses, verse_store)
-    # 5c: Rewrite 'The Gita does not...' claims
-    answer = rewrite_gita_does_not(answer)
-
-    prose_count_after, prose_refs_after = find_prose_citations(answer)
-    for cit_str, sent in prose_refs_after:
-        logger.warning("REMAINING_PROSE_CITATION: citation='%s' | sentence='%s'", cit_str, sent)
-    logger.info("PROSE_CITATIONS_COUNT_AFTER: %d", prose_count_after)
-    logger.info("PROSE_CITATIONS_COUNT: %d (before: %d)", prose_count_after, prose_count_before)
 
     if response:
         response.headers["X-Prose-Citations-Count"] = str(prose_count_after)

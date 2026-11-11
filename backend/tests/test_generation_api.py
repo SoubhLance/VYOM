@@ -1,4 +1,5 @@
 """Tests for Generation (llm/client.py, retrieval/prompt.py) and Serving (api/main.py)."""
+
 import os
 from unittest.mock import MagicMock, patch
 
@@ -8,18 +9,25 @@ from fastapi.testclient import TestClient
 from api.main import (
     app,
     AskRequest,
-    AskResponse,
-    load_verse_store,
     get_verse_neighbors,
     expand_verses_with_neighbors,
 )
-from llm.client import generate_answer, _call_gemini, _call_groq, _call_ollama
+from llm.client import (
+    generate_answer,
+    _call_gemini,
+    _call_groq,
+    DEFAULT_TIMEOUT,
+    GEMINI_MODEL,
+    DEAD_PROVIDERS,
+    RATE_LIMITED_PROVIDERS,
+)
 from retrieval.prompt import SYSTEM_PROMPT, build_rag_prompt
 
 
 # ============================================================================
 # LLM Client Tests
 # ============================================================================
+
 
 def test_prompt_system_prompt_content():
     """Verify SYSTEM_PROMPT contains required grounding and citation instructions."""
@@ -37,11 +45,20 @@ def test_build_rag_prompt_formatting():
             "sanskrit": "कर्मण्येवाधिकारस्ते मा फलेषु कदाचन",
             "transliteration": "karmaṇy-evādhikāras te mā phaleṣhu kadāchana",
             "translations": {
-                "english": [{"author": "Swami Sivananda", "text": "Thy right is to work only, but never to its fruits."}]
+                "english": [
+                    {
+                        "author": "Swami Sivananda",
+                        "text": "Thy right is to work only, but never to its fruits.",
+                    }
+                ]
             },
             "commentaries": [
-                {"author": "Swami Sivananda", "language": "english", "text": "Perform duty without expectation of fruits."}
-            ]
+                {
+                    "author": "Swami Sivananda",
+                    "language": "english",
+                    "text": "Perform duty without expectation of fruits.",
+                }
+            ],
         }
     ]
     prompt = build_rag_prompt("What is Nishkama Karma?", sample_verses)
@@ -54,27 +71,63 @@ def test_build_rag_prompt_formatting():
 def test_generate_answer_gemini_success():
     """Verify generate_answer calls Gemini when GEMINI_API_KEY is available."""
     with patch.dict(os.environ, {"GEMINI_API_KEY": "test-gemini-key"}, clear=True):
-        with patch("llm.client._call_gemini", return_value="Gemini generated response") as mock_gemini:
+        with patch(
+            "llm.client._call_gemini", return_value="Gemini generated response"
+        ) as mock_gemini:
             ans = generate_answer("Test question", "Test system prompt")
             assert ans == "Gemini generated response"
-            mock_gemini.assert_called_once_with("Test question", "Test system prompt", "test-gemini-key")
+            mock_gemini.assert_called_once_with(
+                "Test question", "Test system prompt", "test-gemini-key"
+            )
 
 
 def test_generate_answer_fallback_to_groq():
-    """Verify generate_answer falls back to Groq when Gemini fails."""
-    env = {"GEMINI_API_KEY": "bad-key", "GROQ_API_KEY": "good-groq-key"}
+    """Verify generate_answer falls back to Groq when Gemini (ordered first) fails.
+
+    _call_groq returns (text, model, inner_fallback); generate_answer wraps the text
+    in a GenerationResult and marks fallback_used because groq was not first in order.
+    """
+    DEAD_PROVIDERS.clear()
+    RATE_LIMITED_PROVIDERS.clear()
+    env = {
+        "LLM_PROVIDERS": "gemini,groq",
+        "GEMINI_API_KEY": "bad-key",
+        "GROQ_API_KEY": "good-groq-key",
+    }
     with patch.dict(os.environ, env, clear=True):
-        with patch("llm.client._call_gemini", side_effect=Exception("Gemini quota exceeded")):
-            with patch("llm.client._call_groq", return_value="Groq generated response") as mock_groq:
+        with patch(
+            "llm.client._call_gemini", side_effect=Exception("Gemini quota exceeded")
+        ):
+            with (
+                patch(
+                    "llm.client._call_groq",
+                    return_value=(
+                        "Groq generated response",
+                        "llama-3.3-70b-versatile",
+                        False,
+                    ),
+                ) as mock_groq,
+                patch("llm.client._call_ollama") as mock_ollama,
+            ):
                 ans = generate_answer("Test question", "Test system prompt")
                 assert ans == "Groq generated response"
-                mock_groq.assert_called_once_with("Test question", "Test system prompt", "good-groq-key")
+                assert ans.model == "llama-3.3-70b-versatile"
+                assert ans.fallback_used is True
+                mock_groq.assert_called_once_with(
+                    "Test question",
+                    "Test system prompt",
+                    "good-groq-key",
+                    temperature=0.2,
+                )
+                mock_ollama.assert_not_called()
 
 
 def test_generate_answer_fallback_to_ollama():
     """Verify generate_answer falls back to Ollama when Gemini and Groq both fail or are unset."""
     with patch.dict(os.environ, {}, clear=True):
-        with patch("llm.client._call_ollama", return_value="Ollama local response") as mock_ollama:
+        with patch(
+            "llm.client._call_ollama", return_value="Ollama local response"
+        ) as mock_ollama:
             ans = generate_answer("Test question", "Test system prompt")
             assert ans == "Ollama local response"
             mock_ollama.assert_called_once_with("Test question", "Test system prompt")
@@ -82,7 +135,11 @@ def test_generate_answer_fallback_to_ollama():
 
 def test_call_gemini_sdk():
     """Verify _call_gemini configures genai and calls GenerativeModel."""
-    with patch("llm.client.genai.configure") as mock_conf, patch("llm.client.genai.GenerativeModel") as mock_model_cls:
+    with (
+        patch.dict(os.environ, {}, clear=True),
+        patch("llm.client.genai.configure") as mock_conf,
+        patch("llm.client.genai.GenerativeModel") as mock_model_cls,
+    ):
         mock_instance = MagicMock()
         mock_response = MagicMock()
         mock_response.text = "Gemini SDK output"
@@ -92,45 +149,67 @@ def test_call_gemini_sdk():
         res = _call_gemini("What is dharma?", "Be precise.", "fake-api-key")
         assert res == "Gemini SDK output"
         mock_conf.assert_called_once_with(api_key="fake-api-key")
-        mock_model_cls.assert_called_once_with(model_name="gemini-1.5-flash", system_instruction="Be precise.")
-        mock_instance.generate_content.assert_called_once_with("What is dharma?")
+        mock_model_cls.assert_called_once_with(
+            model_name=GEMINI_MODEL, system_instruction="Be precise."
+        )
+        mock_instance.generate_content.assert_called_once_with(
+            "What is dharma?", request_options={"timeout": DEFAULT_TIMEOUT}
+        )
 
 
 def test_call_groq_sdk():
     """Verify _call_groq initializes Groq client and calls chat.completions.create."""
-    with patch("llm.client.Groq") as mock_groq_cls:
+    with (
+        patch.dict(os.environ, {}, clear=True),
+        patch("llm.client.Groq") as mock_groq_cls,
+    ):
         mock_client = MagicMock()
         mock_completion = MagicMock()
         mock_choice = MagicMock()
         mock_choice.message.content = "Groq SDK output"
+        mock_choice.finish_reason = "stop"
         mock_completion.choices = [mock_choice]
+        mock_completion.model = "openai/gpt-oss-120b"
+        mock_completion.usage = None
         mock_client.chat.completions.create.return_value = mock_completion
         mock_groq_cls.return_value = mock_client
 
         res = _call_groq("What is yoga?", "Be wise.", "fake-groq-key")
-        assert res == "Groq SDK output"
-        mock_groq_cls.assert_called_once_with(api_key="fake-groq-key")
+        assert res == ("Groq SDK output", "openai/gpt-oss-120b", False)
+        mock_groq_cls.assert_called_once_with(
+            api_key="fake-groq-key", timeout=DEFAULT_TIMEOUT
+        )
+        # Default model is gpt-oss-120b: low reasoning effort, reasoning text not returned
         mock_client.chat.completions.create.assert_called_once_with(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             messages=[
                 {"role": "system", "content": "Be wise."},
                 {"role": "user", "content": "What is yoga?"},
             ],
-            temperature=0.3,
+            temperature=0.2,
+            max_tokens=1800,
+            reasoning_effort="low",
+            include_reasoning=False,
         )
 
 
 def test_generate_answer_all_fail():
     """Verify RuntimeError is raised when all providers fail."""
     with patch.dict(os.environ, {}, clear=True):
-        with patch("llm.client._call_ollama", side_effect=Exception("Connection refused")):
-            with pytest.raises(RuntimeError, match="All LLM generation providers in fallback chain failed"):
+        with patch(
+            "llm.client._call_ollama", side_effect=Exception("Connection refused")
+        ):
+            with pytest.raises(
+                RuntimeError,
+                match="All LLM generation providers in fallback chain failed",
+            ):
                 generate_answer("Test question", "Test system prompt")
 
 
 # ============================================================================
 # API Endpoint Tests
 # ============================================================================
+
 
 @pytest.fixture
 def mock_app_state():
@@ -143,18 +222,41 @@ def mock_app_state():
     ]
 
     app.state.searcher = mock_searcher
-    app.state.valid_ids = {"1.1", "2.47", "4.7", "6.26", "6.34", "6.35", "9.22", "18.66"}
+    app.state.valid_ids = {
+        "1.1",
+        "2.47",
+        "4.7",
+        "6.26",
+        "6.34",
+        "6.35",
+        "9.22",
+        "18.66",
+    }
     app.state.verse_store = {
         "4.7": {
             "verse_id": "4.7",
             "sanskrit": "यदा यदा हि धर्मस्य ग्लानिर्भवति भारत",
-            "translations": {"english": [{"author": "Swami Sivananda", "text": "Whenever righteousness wanes, O Bharata..."}]}
+            "translations": {
+                "english": [
+                    {
+                        "author": "Swami Sivananda",
+                        "text": "Whenever righteousness wanes, O Bharata...",
+                    }
+                ]
+            },
         },
         "6.26": {
             "verse_id": "6.26",
             "sanskrit": "ततो नियम्यैतदात्मन्येव वशं नयेत्",
-            "translations": {"english": [{"author": "Swami Sivananda", "text": "Restrain the restless wandering mind..."}]}
-        }
+            "translations": {
+                "english": [
+                    {
+                        "author": "Swami Sivananda",
+                        "text": "Restrain the restless wandering mind...",
+                    }
+                ]
+            },
+        },
     }
     yield app.state
 
@@ -172,8 +274,13 @@ def test_health_endpoint(mock_app_state):
 def test_ask_endpoint_routed(mock_app_state):
     """Test /api/ask with explicit verse reference query (routed = True)."""
     client = TestClient(app)
-    with patch("api.main.generate_answer", return_value="Lord Krishna appears in every age to protect dharma.") as mock_llm:
-        response = client.post("/api/ask", json={"query": "Show me chapter 4 verse 7", "top_k": 3})
+    with patch(
+        "api.main.generate_answer",
+        return_value="Lord Krishna appears in every age to protect dharma.",
+    ) as mock_llm:
+        response = client.post(
+            "/api/ask", json={"query": "Show me chapter 4 verse 7", "top_k": 3}
+        )
         assert response.status_code == 200
         data = response.json()
         assert data["query"] == "Show me chapter 4 verse 7"
@@ -188,15 +295,22 @@ def test_ask_endpoint_routed(mock_app_state):
 def test_ask_endpoint_non_routed(mock_app_state):
     """Test /api/ask with conceptual query (routed = False)."""
     client = TestClient(app)
-    with patch("api.main.generate_answer", return_value="Control the mind with practice and detachment.") as mock_llm:
-        response = client.post("/api/ask", json={"query": "How to control a restless mind?", "top_k": 3})
+    with patch(
+        "api.main.generate_answer",
+        return_value="Control the mind with practice and detachment.",
+    ) as mock_llm:
+        response = client.post(
+            "/api/ask", json={"query": "How to control a restless mind?", "top_k": 3}
+        )
         assert response.status_code == 200
         data = response.json()
         assert data["query"] == "How to control a restless mind?"
         assert data["routed"] is False
         assert data["cited_verses"] == ["6.26", "6.35", "6.34"]
         assert "practice and detachment" in data["answer"]
-        app.state.searcher.search.assert_called_once_with("How to control a restless mind?", k=3)
+        app.state.searcher.search.assert_called_once_with(
+            "How to control a restless mind?", k=3
+        )
         mock_llm.assert_called_once()
 
 
@@ -238,11 +352,16 @@ def test_cited_verses_subset_of_expanded_verses(mock_app_state):
     """Verify cited verses in the response are a strict subset of the expanded context verses."""
     # Add 2.9, 2.10, 2.11 to mock_app_state
     mock_app_state.valid_ids.update({"2.9", "2.10", "2.11"})
-    mock_app_state.verse_store.update({
-        "2.9": {"verse_id": "2.9", "sanskrit": "न योत्स्य इति गोविन्दम्"},
-        "2.10": {"verse_id": "2.10", "sanskrit": "तमुवाच हृषीकेशः प्रहसन्निव भारत"},
-        "2.11": {"verse_id": "2.11", "sanskrit": "अशोच्यानन्वशोचस्त्वं प्रज्ञावादांश्च भाषसे"},
-    })
+    mock_app_state.verse_store.update(
+        {
+            "2.9": {"verse_id": "2.9", "sanskrit": "न योत्स्य इति गोविन्दम्"},
+            "2.10": {"verse_id": "2.10", "sanskrit": "तमुवाच हृषीकेशः प्रहसन्निव भारत"},
+            "2.11": {
+                "verse_id": "2.11",
+                "sanskrit": "अशोच्यानन्वशोचस्त्वं प्रज्ञावादांश्च भाषसे",
+            },
+        }
+    )
     mock_app_state.searcher.search.return_value = [
         {"verse_id": "2.9", "score": 0.95, "chunks": [("2.9:v", 0.95)]}
     ]
@@ -265,8 +384,14 @@ def test_cited_verses_subset_of_expanded_verses(mock_app_state):
 
         # Verify neighbor expansion included 2.10 and 2.11 in prompt
         assert "=== Bhagavad Gita Verse 2.9 ===" in captured_prompt
-        assert "=== Bhagavad Gita Verse 2.10 (Conversational Context following BG 2.9) ===" in captured_prompt
-        assert "=== Bhagavad Gita Verse 2.11 (Conversational Context following BG 2.9) ===" in captured_prompt
+        assert (
+            "=== Bhagavad Gita Verse 2.10 (Conversational Context following BG 2.9) ==="
+            in captured_prompt
+        )
+        assert (
+            "=== Bhagavad Gita Verse 2.11 (Conversational Context following BG 2.9) ==="
+            in captured_prompt
+        )
 
         # Cited verses must be a subset of the retrieved & expanded verses
         all_expanded_ids = {"2.9", "2.10", "2.11"}
@@ -274,7 +399,7 @@ def test_cited_verses_subset_of_expanded_verses(mock_app_state):
 
 
 def test_ask_endpoint_error_masking(mock_app_state):
-    """Verify LLM failure returns a generic 502 error and never leaks internal keys/URLs."""
+    """Verify LLM failure (default multi=False path) returns a generic 503 and never leaks keys/URLs."""
     client = TestClient(app)
     sensitive_error = (
         "404 models/gemini-1.5-flash?key=placeholder_gemini_test_key&leak=true; "
@@ -283,11 +408,11 @@ def test_ask_endpoint_error_masking(mock_app_state):
 
     with patch("api.main.generate_answer", side_effect=RuntimeError(sensitive_error)):
         response = client.post("/api/ask", json={"query": "Tell me about dharma"})
-        assert response.status_code == 502
+        assert response.status_code == 503
         body = response.json()
 
         # Must return the exact generic detail message
-        assert body == {"detail": "Generation failed. Please try again later."}
+        assert body == {"detail": "The guide is busy, please try again in a minute"}
 
         # Must NOT leak secrets or internal provider URLs in response
         assert "placeholder_gemini_test_key" not in response.text
@@ -295,3 +420,38 @@ def test_ask_endpoint_error_masking(mock_app_state):
         assert "https://api.groq.com" not in response.text
         assert "gemini-1.5-flash" not in response.text
 
+
+def test_ask_endpoint_error_masking_multi(mock_app_state):
+    """Verify the multi=True path (frontend default) masks LLM failures the same way."""
+    client = TestClient(app)
+    sensitive_error = (
+        "404 models/gemini-2.5-flash?key=placeholder_gemini_test_key&leak=true; "
+        "Groq failed: auth=placeholder_groq_test_token at https://api.groq.com/v1"
+    )
+    multi_result = {
+        "sub_questions": ["Tell me about dharma"],
+        "verses": [{"verse_id": "6.26", "for_question": [0], "score": 0.9}],
+    }
+
+    with (
+        patch("api.main.is_single_topic_query", return_value=True),
+        patch("api.main.retrieve_multi", return_value=multi_result),
+        patch("api.main.generate_answer", side_effect=RuntimeError(sensitive_error)),
+    ):
+        response = client.post(
+            "/api/ask", json={"query": "Tell me about dharma", "multi": True}
+        )
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "detail": "The guide is busy, please try again in a minute"
+    }
+    for fragment in (
+        "LLM generation failed",
+        "placeholder_gemini_test_key",
+        "placeholder_groq_test_token",
+        "https://api.groq.com",
+        "gemini-2.5-flash",
+        "RuntimeError",
+    ):
+        assert fragment not in response.text

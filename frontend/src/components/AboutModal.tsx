@@ -11,7 +11,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#4B3825]/35 backdrop-blur-md animate-fade-in overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#4B3825]/45 animate-fade-in overflow-y-auto">
       <div className="relative w-full max-w-2xl filigree-card rounded-2xl overflow-hidden p-6 md:p-8 shadow-2xl max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-[#C5A059]/20">
@@ -41,7 +41,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
               <Compass className="w-4 h-4" /> Gateway &amp; Sanctuary
             </h4>
             <p>
-              A short film of the Kurukshetra field opens VYOM, then fades into a quiet cream-and-gold sanctuary where you can ask a question, open the five Gita pillars, or begin reading.
+              A golden VYOM mark, formed from gathering embers, opens the app, then fades into a quiet cream-and-gold sanctuary where you can ask a question, open the five Gita pillars, or begin reading.
             </p>
           </div>
 

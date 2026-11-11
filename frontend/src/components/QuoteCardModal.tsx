@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Download, X, Sparkles, Copy, Check, Palette } from 'lucide-react';
 import type { GitaVerse } from '../data/gitaVerses';
 import confetti from 'canvas-confetti';
+import { useModalFocus } from '../utils/useModalFocus';
 
 interface QuoteCardModalProps {
   verse: GitaVerse | null;
@@ -17,6 +18,7 @@ export const QuoteCardModal: React.FC<QuoteCardModalProps> = ({
   onClose,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const panelRef = useModalFocus<HTMLDivElement>(isOpen && verse !== null, onClose);
   const [theme, setTheme] = useState<ThemeMode>('royalGold');
   const [copied, setCopied] = useState(false);
 
@@ -280,8 +282,8 @@ export const QuoteCardModal: React.FC<QuoteCardModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#4B3825]/40 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-2xl filigree-card rounded-2xl overflow-hidden p-6 flex flex-col items-center shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#4B3825]/50 animate-fade-in">
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-label={`Quote card for BG ${verse.verse_id}`} tabIndex={-1} className="relative w-full max-w-2xl filigree-card rounded-2xl overflow-hidden p-6 flex flex-col items-center shadow-2xl outline-none">
         {/* Header */}
         <div className="w-full flex items-center justify-between pb-4 border-b border-[#C5A059]/20 mb-4">
           <div className="flex items-center gap-2">
@@ -292,6 +294,7 @@ export const QuoteCardModal: React.FC<QuoteCardModalProps> = ({
           </div>
           <button
             onClick={onClose}
+            aria-label="Close quote card"
             className="p-1.5 rounded-lg text-[#6A5A48]/70 hover:text-[#2C261F] hover:bg-[#FFFDF8] transition-colors"
           >
             <X className="w-5 h-5" />

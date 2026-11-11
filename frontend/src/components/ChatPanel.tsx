@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Send,
   Sparkles,
@@ -9,10 +10,13 @@ import {
   Share2,
   Flame,
   ArrowUpRight,
+  X,
 } from 'lucide-react';
 import { lookupVerse, type GitaVerse } from '../data/gitaVerses';
 import type { Source } from '../services/api';
 import { ClipPlayer } from './ClipPlayer';
+import { InspirationPanel } from './SuggestedChips';
+import { useModalFocus } from '../utils/useModalFocus';
 
 export interface ChatMessage {
   id: string;
@@ -39,6 +43,72 @@ interface ChatPanelProps {
   onDismissError: () => void;
 }
 
+interface ChatComposerProps {
+  isLoading: boolean;
+  onSend: (query: string) => void;
+  onInspire: () => void;
+}
+
+/** The input keeps its own state, so each keystroke re-renders only this form, not every answer above it. */
+function ChatComposer({ isLoading, onSend, onInspire }: ChatComposerProps) {
+  const [text, setText] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // "/" jumps to the question box unless the user is already typing somewhere or a dialog is open
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return;
+      const target = event.target;
+      if (target instanceof Element && target.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]')) return;
+      if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
+      event.preventDefault();
+      inputRef.current?.focus();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault();
+    const query = text.trim();
+    if (!query || isLoading) return;
+    onSend(query);
+    setText('');
+  };
+  return (
+    <form onSubmit={submit} className="relative mx-auto flex max-w-3xl items-center gap-2">
+      <button
+        type="button"
+        onClick={onInspire}
+        className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl border border-[#C5A059]/35 bg-[#FFFDF8] px-3 text-xs font-semibold text-[#704B20] transition hover:border-[#A27427] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]/50 xl:hidden"
+        aria-haspopup="dialog"
+        title="Themes and sacred inquiries"
+      >
+        <Sparkles className="h-4 w-4 text-[#E28743]" />
+        <span className="hidden sm:inline">Inspire</span>
+      </button>
+      <input
+        ref={inputRef}
+        type="text"
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        onKeyDown={(event) => { if (event.key === 'Escape' && text) { event.preventDefault(); setText(''); } }}
+        disabled={isLoading}
+        aria-label="Your question"
+        placeholder="Ask a question, or 'Explain BG 2.47'  ( / )"
+        className="h-12 w-full min-w-0 rounded-xl border border-[#C5A059]/35 bg-[#FFFDF8] pl-4 pr-14 font-sans-body text-[15px] text-[#2C261F] placeholder-[#6A5A48]/60 shadow-inner outline-none transition focus:border-[#C5A059] focus:ring-4 focus:ring-[#C5A059]/20"
+      />
+      <button
+        type="submit"
+        disabled={!text.trim() || isLoading}
+        className="absolute right-1.5 p-2.5 rounded-lg bg-gradient-to-r from-[#E28743] to-[#C5A059] text-[#F4ECE1] hover:brightness-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-md"
+        title="Send Inquiry"
+      >
+        <Send className="w-4 h-4" />
+      </button>
+    </form>
+  );
+}
+
 export const ChatPanel: React.FC<ChatPanelProps> = ({
   messages,
   isLoading,
@@ -48,21 +118,25 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   errorBannerText,
   onDismissError,
 }) => {
-  const [inputText, setInputText] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [isInspireOpen, setIsInspireOpen] = useState(false);
+  const closeInspire = () => setIsInspireOpen(false);
+  const sheetRef = useModalFocus<HTMLDivElement>(isInspireOpen, closeInspire);
 
+  // Scroll only the message list (scrollIntoView also scrolled the whole page)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const area = scrollAreaRef.current;
+    if (!area) return;
+    const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    area.scrollTo({ top: area.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
   }, [messages, isLoading]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputText.trim() || isLoading) return;
-    onSendMessage(inputText.trim());
-    setInputText('');
+  const sendInspiration = (query: string) => {
+    setIsInspireOpen(false);
+    onSendMessage(query);
   };
+
 
   const handleCopyMessage = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -171,7 +245,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         return (
           <h4
             key={idx}
-            className="font-cinzel text-sm md:text-base font-bold text-[#C5A059] mt-4 mb-2 tracking-wide flex items-center gap-2"
+            className="font-cinzel text-[15px] md:text-base font-bold text-[#8C2D19] mt-5 mb-2 tracking-wide flex items-center gap-2 first:mt-0"
           >
             <Flame className="w-3.5 h-3.5 text-[#E28743]" />
             {line.replace('### ', '')}
@@ -194,7 +268,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         return (
           <blockquote
             key={idx}
-            className="iast my-1.5 pl-3.5 py-1 border-l-2 border-[#C5A059]/60 bg-[#FFFDF8]/40 rounded-r-lg text-xs md:text-sm leading-relaxed"
+            className="iast my-2 pl-4 py-1.5 border-l-2 border-[#C5A059]/60 bg-[#F4ECE1]/50 rounded-r-lg text-sm md:text-[15px] leading-relaxed"
           >
             {line.replace('> ', '')}
           </blockquote>
@@ -208,7 +282,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
       // Regular paragraph with bold highlighting
       return (
-        <p key={idx} className="font-sans-body text-xs md:text-sm leading-relaxed text-[#2C261F]/90 my-1">
+        <p key={idx} className="font-sans-body text-[15px] leading-7 text-[#2C261F] my-1.5">
           {renderFormattedInline(line)}
         </p>
       );
@@ -241,18 +315,18 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     <div className="flex flex-col h-full rounded-2xl filigree-card overflow-hidden shadow-2xl border border-[#C5A059]/20">
       {/* Serene Golden Banner for 502 / Error Masking */}
       {errorBannerText && (
-        <div className="relative px-4 py-3 bg-gradient-to-r from-[#2A1D0B] via-[#38260E] to-[#2A1D0B] border-b border-[#C5A059]/40 text-[#2C261F] flex items-center justify-between shadow-md animate-fade-in">
+        <div role="alert" className="relative px-4 py-3 bg-[#F4ECE1] border-b border-[#E28743]/40 text-[#8C2D19] flex items-center justify-between animate-fade-in">
           <div className="flex items-center gap-2.5">
             <span className="p-1 rounded-full bg-[#E28743]/20 border border-[#E28743]/40">
               <AlertCircle className="w-4 h-4 text-[#E28743]" />
             </span>
-            <p className="font-cinzel text-xs font-medium tracking-wide">
+            <p className="text-[13px] font-medium">
               {errorBannerText}
             </p>
           </div>
           <button
             onClick={onDismissError}
-            className="text-xs text-[#C5A059] hover:text-[#2C261F] font-cinzel underline ml-3"
+            className="ml-3 shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-[#704B20] underline-offset-2 hover:bg-[#FFFDF8] hover:underline"
           >
             Dismiss
           </button>
@@ -260,29 +334,25 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
       )}
 
       {/* Messages Scroll Area */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+      <div ref={scrollAreaRef} className="flex-1 overflow-y-auto overscroll-contain px-3 py-5 sm:px-8 sm:py-7">
+        <div className="mx-auto max-w-3xl space-y-7">
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex flex-col ${
+            className={`chat-msg-in flex flex-col ${
               msg.sender === 'user' ? 'items-end' : 'items-start'
-            } transition-all`}
+            }`}
           >
             {/* Sender Badge */}
             <div className="flex items-center gap-1.5 mb-1.5 text-[11px] font-cinzel text-[#6A5A48]/70">
               {msg.sender === 'user' ? (
-                <>
-                  <span>You (Seeker)</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#C5A059]" />
-                </>
+                <span>You</span>
               ) : (
                 <>
                   <Sparkles className="w-3.5 h-3.5 text-[#E28743]" />
-                  <span className="font-bold text-[#C5A059]">
-                    VYOM Intelligence
-                  </span>
+                  <span className="font-bold text-[#8C2D19]">VYOM</span>
                   {msg.isOfflineFallback && (
-                    <span className="px-1.5 py-0.2 rounded text-[9px] bg-amber-500/10 border border-amber-500/20 text-amber-300">
+                    <span className="rounded border border-[#E28743]/40 bg-[#E28743]/10 px-1.5 py-0.5 font-sans text-[10px] font-semibold text-[#8C2D19]">
                       Offline Mode
                     </span>
                   )}
@@ -295,15 +365,15 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
             {/* Bubble */}
             <div
-              className={`max-w-[92%] sm:max-w-[85%] rounded-2xl p-4 sm:p-5 relative group transition-all ${
+              className={`relative group ${
                 msg.sender === 'user'
-                  ? 'bg-gradient-to-br from-[#EDE3D2] to-[#F4ECE1] border border-[#C5A059]/30 text-[#2C261F] rounded-tr-none shadow-md'
-                  : 'bg-gradient-to-br from-[#FFFDF8]/95 via-[#FFFDF8]/95 to-[#F4ECE1]/95 border border-[#C5A059]/25 text-[#2C261F] rounded-tl-none shadow-xl'
+                  ? 'max-w-[85%] rounded-2xl rounded-br-md bg-[#4B3825] px-4 py-2.5 text-[#FAF6EB] shadow-sm'
+                  : 'w-full rounded-2xl rounded-tl-md border border-[#C5A059]/25 border-l-[3px] border-l-[#C5A059] bg-[#FFFDF8]/95 px-4 py-4 text-[#2C261F] shadow-[0_10px_30px_rgba(180,140,75,0.08)] sm:px-6 sm:py-5'
               }`}
             >
               {/* Message Content */}
               {msg.sender === 'user' ? (
-                <p className="font-sans-body text-sm text-[#2C261F] leading-relaxed">
+                <p className="font-sans-body text-[15px] leading-relaxed text-[#FAF6EB]">
                   {msg.text}
                 </p>
               ) : (
@@ -486,10 +556,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
               )}
 
               {/* Action Buttons (Copy) */}
-              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100">
                 <button
                   onClick={() => handleCopyMessage(msg.id, msg.text)}
                   title="Copy response"
+                  aria-label="Copy response"
                   className="p-1.5 rounded-lg bg-[#F4ECE1]/80 border border-[#C5A059]/20 text-[#6A5A48] hover:text-[#2C261F] transition-colors"
                 >
                   {copiedId === msg.id ? (
@@ -503,50 +574,34 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           </div>
         ))}
 
-        {/* Loading Spinner / Meditation animation */}
+        {/* Typing indicator: a softly flickering diya */}
         {isLoading && (
-          <div className="flex flex-col items-start space-y-2 animate-pulse">
-            <div className="flex items-center gap-2 text-xs font-cinzel text-[#C5A059]">
-              <Sparkles className="w-4 h-4 text-[#E28743] animate-spin" style={{ animationDuration: '3s' }} />
-              <span>Contemplating the Eternal Verse...</span>
-            </div>
-            <div className="p-4 rounded-2xl bg-[#FFFDF8]/80 border border-[#C5A059]/20 max-w-sm rounded-tl-none flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-[#E28743] animate-bounce" style={{ animationDelay: '0ms' }} />
-              <div className="w-2 h-2 rounded-full bg-[#C5A059] animate-bounce" style={{ animationDelay: '150ms' }} />
-              <div className="w-2 h-2 rounded-full bg-[#C5A059] animate-bounce" style={{ animationDelay: '300ms' }} />
-              <span className="font-cinzel text-xs text-[#6A5A48]/80 italic ml-2">
-                Grounding in Kurukshetra dialogue...
-              </span>
-            </div>
+          <div className="chat-msg-in flex items-center gap-3 rounded-2xl rounded-tl-md border border-[#C5A059]/25 bg-[#FFFDF8]/90 px-4 py-3 w-fit" role="status">
+            <Flame className="chat-diya h-4 w-4 text-[#E28743]" aria-hidden="true" />
+            <span className="font-cinzel text-xs tracking-wide text-[#6A5A48]">Contemplating the verses…</span>
           </div>
         )}
-
-        <div ref={messagesEndRef} />
+        </div>
       </div>
 
       {/* Input Bar */}
-      <div className="p-4 border-t border-[#C5A059]/20 bg-[#F4ECE1]/90 backdrop-blur-md">
-        <form onSubmit={handleSubmit} className="relative flex items-center">
-          <input
-            ref={inputRef}
-            type="text"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            disabled={isLoading}
-            placeholder="Inquire of Lord Krishna... (e.g. 'Explain BG 2.47' or 'How to overcome grief?')"
-            className="w-full py-3.5 pl-4 pr-14 rounded-xl bg-[#FFFDF8] border border-[#C5A059]/30 focus:border-[#E28743] focus:ring-1 focus:ring-[#E28743] text-sm text-[#2C261F] placeholder-[#6A5A48]/40 outline-none transition-all shadow-inner font-sans-body"
-          />
-
-          <button
-            type="submit"
-            disabled={!inputText.trim() || isLoading}
-            className="absolute right-2 p-2.5 rounded-lg bg-gradient-to-r from-[#E28743] to-[#C5A059] text-[#F4ECE1] hover:brightness-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-md"
-            title="Send Inquiry"
-          >
-            <Send className="w-4 h-4" />
-          </button>
-        </form>
+      <div className="border-t border-[#C5A059]/20 bg-[#F4ECE1]/95 px-3 pb-2.5 pt-3 sm:px-6">
+        <ChatComposer isLoading={isLoading} onSend={onSendMessage} onInspire={() => setIsInspireOpen(true)} />
+        <p className="mx-auto mt-1.5 max-w-3xl text-center text-[11px] text-[#796A57]">Grounded in sacred verses and traditional commentaries</p>
       </div>
+
+      {/* Inspiration sheet (below xl, where there is no side rail), portalled to <body> so no ancestor's
+          filter or transform can trap position: fixed inside the chat card */}
+      {isInspireOpen && createPortal(
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#4B3825]/45 xl:hidden" onMouseDown={(event) => { if (event.target === event.currentTarget) closeInspire(); }}>
+          <div ref={sheetRef} role="dialog" aria-modal="true" aria-label="Inspiration" tabIndex={-1} className="chat-sheet-in relative max-h-[78dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl border border-b-0 border-[#C5A059]/40 bg-[#FAF6EB] px-5 pb-8 pt-3 shadow-2xl outline-none">
+            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[#C5A059]/50" aria-hidden="true" />
+            <button onClick={closeInspire} aria-label="Close inspiration" className="absolute right-3 top-3 rounded-lg p-1.5 text-[#6A5A48] hover:bg-[#F4ECE1]"><X className="h-4 w-4" /></button>
+            <InspirationPanel onSelectQuery={sendInspiration} disabled={isLoading} />
+          </div>
+        </div>,
+        document.body,
+      )}
     </div>
   );
 };

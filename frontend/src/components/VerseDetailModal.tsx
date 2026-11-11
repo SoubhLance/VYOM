@@ -7,6 +7,7 @@ import {
   Feather,
 } from 'lucide-react';
 import type { GitaVerse } from '../data/gitaVerses';
+import { useModalFocus } from '../utils/useModalFocus';
 
 interface VerseDetailModalProps {
   verse: GitaVerse | null;
@@ -21,11 +22,12 @@ export const VerseDetailModal: React.FC<VerseDetailModalProps> = ({
   onClose,
   onOpenQuoteCard,
 }) => {
+  const panelRef = useModalFocus<HTMLDivElement>(isOpen && verse !== null, onClose);
   if (!isOpen || !verse) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#4B3825]/35 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-3xl my-8 filigree-card rounded-2xl overflow-hidden shadow-2xl p-6 md:p-8 flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#4B3825]/45 animate-fade-in overflow-y-auto">
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-label={`Bhagavad Gita ${verse.verse_id}`} tabIndex={-1} className="relative w-full max-w-3xl my-8 filigree-card rounded-2xl overflow-hidden shadow-2xl p-6 md:p-8 flex flex-col max-h-[90vh] outline-none">
         {/* Header Bar */}
         <div className="flex items-center justify-between pb-4 border-b border-[#C5A059]/20">
           <div className="flex items-center gap-3">
@@ -49,6 +51,7 @@ export const VerseDetailModal: React.FC<VerseDetailModalProps> = ({
 
           <button
             onClick={onClose}
+            aria-label="Close verse"
             className="p-2 rounded-xl text-[#6A5A48]/70 hover:text-[#2C261F] hover:bg-[#FFFDF8] transition-colors"
           >
             <X className="w-5 h-5" />
@@ -64,7 +67,7 @@ export const VerseDetailModal: React.FC<VerseDetailModalProps> = ({
             </span>
 
             <div className="my-4">
-              <p className="font-sanskrit text-2xl md:text-3xl leading-relaxed text-[#FFF8E7] font-medium tracking-wide drop-shadow-sm whitespace-pre-line">
+              <p lang="sa" className="font-sanskrit text-2xl md:text-3xl leading-relaxed text-[#8C2D19] font-medium tracking-wide whitespace-pre-line">
                 {verse.sanskrit}
               </p>
             </div>

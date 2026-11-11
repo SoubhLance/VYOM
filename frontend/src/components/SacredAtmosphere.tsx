@@ -25,14 +25,20 @@ export function SacredAtmosphere() {
     };
     resize();
     window.addEventListener('resize', resize);
-    const count = reducedMotion ? 0 : Math.min(52, Math.floor((width * height) / 28000));
+    const count = reducedMotion ? 0 : Math.min(32, Math.floor((width * height) / 40000));
     for (let i = 0; i < count; i += 1) particles.push({ x: Math.random() * width, y: Math.random() * height, length: 5 + Math.random() * 12, speed: 0.35 + Math.random() * 0.7, drift: 0.12 + Math.random() * 0.24, alpha: 0.12 + Math.random() * 0.16 });
+    // ~30 fps is plenty for slow rain and halves the work on the main thread
+    let skip = false;
     const draw = () => {
+      animation = window.requestAnimationFrame(draw);
+      skip = !skip;
+      if (skip || document.hidden) return;
       context.clearRect(0, 0, width, height);
+      context.strokeStyle = 'rgb(212, 175, 55)';
+      context.lineWidth = 1;
       for (const particle of particles) {
         context.beginPath();
-        context.strokeStyle = `rgba(212, 175, 55, ${particle.alpha})`;
-        context.lineWidth = 1;
+        context.globalAlpha = particle.alpha;
         context.moveTo(particle.x, particle.y);
         context.lineTo(particle.x + particle.drift * particle.length, particle.y + particle.length);
         context.stroke();
@@ -40,7 +46,6 @@ export function SacredAtmosphere() {
         particle.y += particle.speed;
         if (particle.y > height) { particle.y = -particle.length; particle.x = Math.random() * width; }
       }
-      if (!reducedMotion) animation = window.requestAnimationFrame(draw);
     };
     if (!reducedMotion) animation = window.requestAnimationFrame(draw);
     return () => { window.removeEventListener('resize', resize); window.cancelAnimationFrame(animation); };

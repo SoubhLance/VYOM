@@ -21,11 +21,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAbout,
   onOpenBook,
 }) => (
-  <header className="sticky top-0 z-40 w-full border-b border-[#C5A059]/30 bg-[#FAF6EB]/85 shadow-sm backdrop-blur-xl">
+  <header className="sticky top-0 z-40 w-full border-b border-[#C5A059]/30 bg-[#FAF6EB]/95 shadow-sm">
     <div className="mx-auto flex min-h-[76px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
       <div className="flex min-w-0 items-center gap-3"><VyomLogo size="sm" showSubtitle={false} /><span className="hidden text-sm text-[#4B3825] sm:block">Bhagavad Gita Multimodal Intelligence</span></div>
       <div className="flex items-center gap-2 sm:gap-3">
-        <button onClick={onRefreshHealth} title="Refresh API status" className="flex items-center gap-2 rounded-full border border-[#C5A059]/30 bg-white/70 px-3 py-2 text-xs text-[#4B3825]"><span className="relative flex h-2 w-2"><span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${isBackendOnline ? 'bg-emerald-400' : 'bg-amber-400'}`} /><span className={`relative inline-flex h-2 w-2 rounded-full ${isBackendOnline ? 'bg-emerald-500' : 'bg-amber-500'}`} /></span><span className="hidden sm:inline">{isCheckingHealth ? 'Connecting…' : isBackendOnline ? 'Connected' : 'Offline'}</span><Activity className="h-3.5 w-3.5 text-[#A27427]" /></button>
+        <button onClick={onRefreshHealth} title="Refresh API status" className="flex items-center gap-2 rounded-full border border-[#C5A059]/30 bg-white/70 px-3 py-2 text-xs text-[#4B3825]"><span className="relative flex h-2 w-2"><span key={isBackendOnline ? 'online' : 'offline'} className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 [animation-iteration-count:3] motion-reduce:animate-none ${isBackendOnline ? 'bg-emerald-400' : 'bg-amber-400'}`} /><span className={`relative inline-flex h-2 w-2 rounded-full ${isBackendOnline ? 'bg-emerald-500' : 'bg-amber-500'}`} /></span><span className="hidden sm:inline">{isCheckingHealth ? 'Connecting…' : isBackendOnline ? 'Connected' : 'Offline'}</span><Activity className="h-3.5 w-3.5 text-[#A27427]" /></button>
         <button
           onClick={onOpenBook}
           title="Open the Gita Sacred Book (All 701 Shlokas)"

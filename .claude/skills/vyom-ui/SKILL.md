@@ -14,7 +14,7 @@ Colours are Tailwind arbitrary values, e.g. `text-[#2C261F]`. The `:root` vars i
 
 Fonts (loaded in `index.html`): `font-cinzel` for headings and labels (often uppercase with `tracking-[0.18em]`); Plus Jakarta Sans for body (the default); `font-sanskrit` = Tiro Devanagari Sanskrit. `GitaBookReader.css` adds a Noto Serif Devanagari fallback and uses Georgia for prose.
 
-Surfaces: `.royal-card` / `.filigree-card` (ivory at 0.88–0.9, gold border at 0.35, blur 12px, shadow `0 10px 30px rgba(180,140,75,.08)`), plus `.subtle-gold-glow` and `.gold-glow`. Corners: `rounded-xl` by default, `rounded-2xl` for cards and modals, `rounded-full` for pills.
+Surfaces: `.royal-card` / `.filigree-card` (ivory at 0.94–0.95, gold border at 0.35, no backdrop blur, shadow `0 10px 30px rgba(180,140,75,.08)`), plus `.subtle-gold-glow` and `.gold-glow`. Corners: `rounded-xl` by default, `rounded-2xl` for cards and modals, `rounded-full` for pills.
 
 Mist: `SacredAtmosphere` clouds (blur 55px, opacity .15–.24, 45–66 s drift; off under reduced motion).
 
@@ -30,4 +30,4 @@ Breakpoints: Tailwind `sm`, `md` and `lg`; the reader CSS switches at 768px.
 4. Check at 375px and at desktop width. Anything you didn't see yourself is UNVERIFIED.
 5. Keep the sanctuary calm: no flashy effects, neon, bouncing or loops faster than 3s. Every new animation must respect `prefers-reduced-motion`.
 
-Known traps: `animate-fade-in` and `font-cinzel-dec` are not defined; `src/App.css` is unused; `RecitationSanctuary.tsx` is not mounted (leave it until the owner decides).
+Known traps: `font-cinzel-dec` points at Cinzel Decorative, which is not loaded; `RecitationSanctuary.tsx` is not mounted (leave it until the owner decides). `animate-fade-in` is defined in `index.css` (200 ms fade). Never put `backdrop-filter` blur on surfaces over the animated background: it re-blurs every frame and caused the lag fixed on 2026-11-12.

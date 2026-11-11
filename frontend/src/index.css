@@ -40,6 +40,32 @@
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
+/* Chat motion: messages rise in, the diya flickers slowly, the inspiration sheet slides up.
+   .animate-fade-in is the modal / banner entrance (it was used but never defined). */
+@media (prefers-reduced-motion: no-preference) {
+  .animate-fade-in { animation: fade-in 200ms ease-out both; }
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+  .chat-msg-in { animation: chat-rise 280ms ease-out both; }
+  .chat-diya { animation: chat-diya 3s ease-in-out infinite; transform-origin: 50% 90%; }
+  .chat-sheet-in { animation: chat-sheet 260ms cubic-bezier(0.2, 0.75, 0.25, 1) both; }
+  @keyframes chat-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes chat-diya {
+    0%, 100% { opacity: 0.85; transform: scale(1); }
+    40% { opacity: 1; transform: scale(1.08) rotate(-3deg); }
+    70% { opacity: 0.9; transform: scale(0.96) rotate(2deg); }
+  }
+  @keyframes chat-sheet { from { transform: translateY(100%); } to { transform: none; } }
+}
+
+/* VYOM mark: the transparent logo used as a mask, filled with the current text colour */
+.vyom-mark {
+  display: block;
+  aspect-ratio: 900 / 528;
+  background-color: currentColor;
+  -webkit-mask: url('/vyom-mark.webp') center / contain no-repeat;
+  mask: url('/vyom-mark.webp') center / contain no-repeat;
+}
+
 /* Gold Text Gradients */
 .gold-gradient-text {
   background: linear-gradient(135deg, #F4D98E 0%, #D4AF37 35%, #C5A059 70%, #8C642B 100%);
@@ -61,10 +87,9 @@
 
 /* Filigree & Royal Borders */
 .filigree-card {
-  background: rgba(255, 253, 248, 0.9);
+  background: rgba(255, 253, 248, 0.95);
   border: 1px solid rgba(212, 175, 55, 0.35);
   box-shadow: 0 10px 30px rgba(180, 140, 75, 0.08);
-  backdrop-filter: blur(12px);
   position: relative;
 }
 
@@ -110,14 +135,13 @@
 }
 
 .royal-card {
-  background: rgba(255, 253, 248, 0.88);
+  background: rgba(255, 253, 248, 0.94);
   border: 1px solid rgba(212, 175, 55, 0.35);
   box-shadow: 0 10px 30px rgba(180, 140, 75, 0.08);
-  backdrop-filter: blur(12px);
 }
 
 .sacred-atmosphere { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-.sacred-cloud { position: absolute; width: 70vw; height: 30vh; min-height: 190px; border-radius: 50%; filter: blur(55px); opacity: .24; background: radial-gradient(ellipse, rgba(255,255,255,.9) 0%, rgba(239,220,180,.55) 42%, transparent 72%); animation: cloudFloat 45s linear infinite; }
+.sacred-cloud { position: absolute; width: 70vw; height: 30vh; min-height: 190px; border-radius: 50%; opacity: .24; background: radial-gradient(ellipse closest-side, rgba(255,255,255,.75) 0%, rgba(239,220,180,.4) 45%, rgba(239,220,180,.12) 75%, transparent 100%); animation: cloudFloat 45s linear infinite; will-change: transform; }
 .sacred-cloud-one { top: 8%; left: -30%; }
 .sacred-cloud-two { top: 43%; left: 40%; opacity: .15; animation-duration: 58s; animation-direction: reverse; }
 .sacred-cloud-three { bottom: -4%; left: -20%; opacity: .18; animation-duration: 66s; }

@@ -123,13 +123,10 @@ body:has(.gita-book-reader),
   box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.36), 0 0 0 1px rgba(226, 185, 107, 0.24);
 }
 
-.gita-cover-art-frame img {
+.gita-cover-art-frame svg {
   display: block;
   width: 100%;
   height: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  background: #FAF6EB;
 }
 
 .gita-cover-devanagari {
@@ -254,14 +251,13 @@ body:has(.gita-book-reader),
   visibility: hidden;
   opacity: 0;
   pointer-events: none;
-  transform: rotateY(-88deg);
+  transform: scale(0.97);
 }
 
-.gita-book-scene.is-open .gita-front-cover {
+.gita-book-scene.is-open .gita-front-cover-stage {
   visibility: hidden;
   opacity: 0;
   pointer-events: none;
-  transform: rotateY(-88deg);
 }
 
 .gita-cover-return-button {
@@ -546,6 +542,7 @@ body:has(.gita-book-reader),
 }
 
 .gita-translation {
+  max-width: 62ch;
   margin: 0;
   color: #2C261F;
   font-family: Georgia, 'Times New Roman', serif;
@@ -868,6 +865,7 @@ body:has(.gita-book-reader),
 
   .gita-sanskrit-lines {
     font-size: clamp(1.44rem, 6.9vw, 1.9rem);
+    line-height: 1.75;
   }
 
   .gita-page-number {
@@ -894,7 +892,7 @@ body:has(.gita-book-reader),
 
   .gita-recitation-actions {
     width: 100%;
-    justify-content: flex-end;
+    justify-content: space-between;
   }
 
   .gita-contents-drawer {
@@ -929,56 +927,437 @@ body:has(.gita-book-reader),
     animation-duration: 450ms;
   }
 
-  .gita-book-scene.has-transition.is-open .gita-front-cover {
-    animation: gita-cover-open 720ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
-  }
-
-  .gita-book-scene.has-transition.is-open .gita-book-pages-view {
-    animation: gita-pages-open 720ms cubic-bezier(0.2, 0.75, 0.25, 1) 80ms both;
-  }
-
-  .gita-book-scene.has-transition.is-closed .gita-book-pages-view {
-    animation: gita-pages-close 620ms cubic-bezier(0.55, 0, 0.8, 0.3) both;
-  }
-
-  .gita-book-scene.has-transition.is-closed .gita-front-cover {
-    animation: gita-cover-close 700ms cubic-bezier(0.2, 0.75, 0.25, 1) 60ms both;
-  }
-
-  @keyframes gita-cover-open {
-    0% { visibility: visible; opacity: 1; transform: rotateY(0); }
-    82% { visibility: visible; opacity: 0.35; transform: rotateY(-72deg); }
-    100% { visibility: hidden; opacity: 0; transform: rotateY(-88deg); }
-  }
-
-  @keyframes gita-pages-open {
-    0% { visibility: visible; opacity: 0; transform: rotateY(-88deg); }
-    28% { visibility: visible; opacity: 0.55; }
-    100% { visibility: visible; opacity: 1; transform: rotateY(0); }
-  }
-
-  @keyframes gita-pages-close {
-    0% { visibility: visible; opacity: 1; transform: rotateY(0); }
-    80% { visibility: visible; opacity: 0.3; transform: rotateY(72deg); }
-    100% { visibility: hidden; opacity: 0; transform: rotateY(88deg); }
-  }
-
-  @keyframes gita-cover-close {
-    0% { visibility: visible; opacity: 0; transform: rotateY(-88deg); }
-    100% { visibility: visible; opacity: 1; transform: rotateY(0); }
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .gita-book-scene.is-closed .gita-front-cover {
+  .gita-book-scene.is-closed .gita-front-cover-stage {
     visibility: visible;
     opacity: 1;
-    transform: none;
   }
 
   .gita-book-scene.is-open .gita-book-pages-view {
     visibility: visible;
     opacity: 1;
     transform: none;
+  }
+}
+
+/* Polish: verse entry, staggered Sanskrit lines, hover lift, drawer scrim. Motion only when allowed. */
+.gita-book-navigation button,
+.gita-chapter-choice,
+.gita-verse-grid button {
+  transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .gita-verse-enter {
+    animation: gita-verse-rise 360ms ease-out both;
+  }
+
+  .gita-verse-enter .gita-sanskrit-lines p {
+    animation: gita-verse-rise 320ms ease-out both;
+    animation-delay: calc(80ms + var(--line, 0) * 60ms);
+  }
+
+  .gita-book-navigation button:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(180, 140, 75, 0.16);
+  }
+
+  .gita-chapter-choice:hover {
+    transform: translateX(2px);
+  }
+
+  .gita-contents-layer {
+    animation: gita-scrim-in 220ms ease-out both;
+  }
+
+  @keyframes gita-verse-rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @keyframes gita-scrim-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}
+
+/* Phones: the right page gets the same gentle rise instead of the desktop page turn */
+@media (prefers-reduced-motion: no-preference) and (max-width: 767px) {
+  .gita-book-reader .gita-page-turn {
+    animation: gita-verse-rise 360ms ease-out both;
+  }
+}
+
+/* ------------------------------------------------------------------ 3D closed book */
+.gita-front-cover-stage {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1rem 0.75rem;
+}
+
+.gita-book3d {
+  --depth: 26px;
+  --book-w: min(330px, 70vw, calc((100dvh - 290px) / 1.42));
+  position: relative;
+  perspective: 1400px;
+  padding: 0 calc(var(--depth) + 6px) 0 0;
+}
+
+/* soft floor shadow */
+.gita-book3d::after {
+  position: absolute;
+  z-index: -1;
+  right: 8%;
+  bottom: -18px;
+  left: 4%;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse closest-side, rgba(36, 6, 11, 0.38), rgba(36, 6, 11, 0.12) 60%, transparent);
+  content: '';
+}
+
+.gita-book3d-body {
+  position: relative;
+  width: var(--book-w);
+  aspect-ratio: 1 / 1.42;
+  transform-style: preserve-3d;
+  transform: rotateX(calc(5deg + var(--rx, 0deg))) rotateY(calc(-20deg + var(--ry, 0deg)));
+  transition: transform 450ms cubic-bezier(0.2, 0.75, 0.25, 1);
+  will-change: transform;
+}
+
+.gita-book3d-face {
+  position: absolute;
+}
+
+.gita-book3d-back {
+  inset: 0;
+  border-radius: 0.2rem 0.9rem 0.9rem 0.2rem;
+  background: #24060B;
+  transform: translateZ(calc(var(--depth) * -1));
+}
+
+.gita-book3d-spine {
+  top: 0;
+  left: 0;
+  width: var(--depth);
+  height: 100%;
+  background: linear-gradient(90deg, #24060B, #3D0A13 45%, #24060B);
+  box-shadow: inset 0 22px 0 -18px #C5A059, inset 0 -22px 0 -18px #C5A059;
+  transform-origin: left center;
+  transform: rotateY(90deg);
+}
+
+/* page block: cream edges with fine paper lines */
+.gita-book3d-edge-right {
+  top: 5px;
+  bottom: 5px;
+  left: calc(100% - 4px);
+  width: calc(var(--depth) - 2px);
+  background: repeating-linear-gradient(90deg, #e7dcc3 0 1px, #FAF6EB 1px 3px);
+  transform-origin: left center;
+  transform: rotateY(90deg);
+}
+
+.gita-book3d-edge-top,
+.gita-book3d-edge-bottom {
+  right: 5px;
+  left: 3px;
+  height: calc(var(--depth) - 2px);
+  background: repeating-linear-gradient(180deg, #e7dcc3 0 1px, #FAF6EB 1px 3px);
+  transform-origin: top center;
+  transform: rotateX(-90deg);
+}
+
+.gita-book3d-edge-top {
+  top: 4px;
+}
+
+.gita-book3d-edge-bottom {
+  top: calc(100% - 4px);
+}
+
+/* the page revealed when the cover swings open */
+.gita-book3d-firstpage {
+  position: absolute;
+  inset: 5px 5px 5px 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  border-radius: 0.1rem 0.6rem 0.6rem 0.1rem;
+  color: #8C2D19;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.12), transparent 12%), linear-gradient(145deg, #fffdf6, #FAF6EB 46%, #f2e8d4);
+  text-align: center;
+  transform: translateZ(-2px);
+}
+
+.gita-book3d-firstpage .gita-book3d-om {
+  color: #A27427;
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.gita-book3d-firstpage p {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.gita-book3d-firstpage p.font-cinzel {
+  color: #6A5A48;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+}
+
+.gita-book3d-firstpage i {
+  width: 3.5rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #C5A059, transparent);
+}
+
+/* the cover hinges on the spine; its inside shows once it passes 90deg */
+.gita-book3d-lid {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform-origin: left center;
+  will-change: transform;
+}
+
+.gita-book3d .gita-front-cover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+  aspect-ratio: auto;
+  gap: 0.6rem;
+  padding: 1.1rem 1rem 0.9rem 1.85rem;
+  transform: none;
+  backface-visibility: hidden;
+}
+
+.gita-cover-inside {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.9rem 0.2rem 0.2rem 0.9rem;
+  background: linear-gradient(270deg, #24060B, #3D0A13);
+  box-shadow: inset 0 0 0 10px rgba(197, 160, 89, 0.16), inset 0 0 0 11px rgba(197, 160, 89, 0.5);
+  transform: rotateY(180deg);
+  backface-visibility: hidden;
+}
+
+.gita-cover-art-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 35%;
+}
+
+.gita-book3d .gita-cover-art-frame {
+  padding: 4px;
+  background: #24060B;
+}
+
+.gita-book3d .gita-cover-devanagari {
+  margin-top: 0.2rem;
+  font-size: clamp(1.3rem, 2.4vw, 1.65rem);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.gita-book3d .gita-cover-subtitle {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+}
+
+.gita-book3d-actions {
+  display: flex;
+  width: min(330px, 86vw);
+  flex-direction: column;
+  align-items: center;
+}
+
+.gita-book3d-actions .gita-cover-open-button {
+  margin-top: 0;
+}
+
+.gita-book3d-actions .gita-cover-back-button {
+  color: #704B20;
+  background: #FFFDF8;
+}
+
+.gita-book3d-actions .gita-cover-back-button:hover {
+  color: #8C2D19;
+  background: #F4ECE1;
+}
+
+@media (max-width: 767px) {
+  .gita-book3d {
+    --depth: 16px;
+    --book-w: min(270px, 66vw, calc((100dvh - 280px) / 1.42));
+  }
+
+  .gita-book3d .gita-front-cover {
+    padding: 0.85rem 0.75rem 0.7rem 1.5rem;
+  }
+}
+
+/* ------------------------------------------------------------------ page-turn leaf (desktop) */
+.gita-page-leaf {
+  display: none;
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .gita-page-leaf {
+    position: absolute;
+    z-index: 5;
+    top: 10px;
+    bottom: 10px;
+    display: block;
+    pointer-events: none;
+    background: linear-gradient(90deg, #f2e8d4, #FAF6EB 30%, #fffdf6);
+    box-shadow: 0 6px 18px rgba(52, 33, 24, 0.18);
+    backface-visibility: visible;
+  }
+
+  .gita-page-leaf::after {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.18), transparent 35%);
+    opacity: 0;
+    content: '';
+    animation: gita-leaf-shade 620ms ease-in-out both;
+  }
+
+  .gita-page-leaf.is-next {
+    right: 10px;
+    left: calc(50% + 9px);
+    transform-origin: left center;
+    animation: gita-leaf-next 620ms cubic-bezier(0.45, 0.05, 0.25, 1) both;
+  }
+
+  .gita-page-leaf.is-prev {
+    right: calc(50% + 9px);
+    left: 10px;
+    transform-origin: right center;
+    animation: gita-leaf-prev 620ms cubic-bezier(0.45, 0.05, 0.25, 1) both;
+  }
+
+  @keyframes gita-leaf-next {
+    0% { opacity: 1; transform: rotateY(0); }
+    85% { opacity: 1; }
+    100% { opacity: 0; transform: rotateY(-178deg); }
+  }
+
+  @keyframes gita-leaf-prev {
+    0% { opacity: 1; transform: rotateY(0); }
+    85% { opacity: 1; }
+    100% { opacity: 0; transform: rotateY(178deg); }
+  }
+
+  @keyframes gita-leaf-shade {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+  }
+}
+
+/* ------------------------------------------------------------------ open / close sequence */
+@media (prefers-reduced-motion: no-preference) {
+  .gita-book-scene.has-transition.is-open .gita-front-cover-stage {
+    animation: gita-stage-out 1150ms ease both;
+  }
+
+  .gita-book-scene.has-transition.is-open .gita-book3d-body {
+    animation: gita-body-open 900ms cubic-bezier(0.3, 0.7, 0.2, 1) both;
+  }
+
+  .gita-book-scene.has-transition.is-open .gita-book3d-lid {
+    animation: gita-lid-open 900ms cubic-bezier(0.3, 0.7, 0.2, 1) both;
+  }
+
+  .gita-book-scene.has-transition.is-open .gita-book3d-actions {
+    animation: gita-fade-out 260ms ease both;
+  }
+
+  .gita-book-scene.has-transition.is-open .gita-book-pages-view {
+    animation: gita-pages-in 480ms cubic-bezier(0.2, 0.75, 0.25, 1) 760ms both;
+  }
+
+  .gita-book-scene.has-transition.is-closed .gita-book-pages-view {
+    animation: gita-pages-out 280ms ease-in both;
+  }
+
+  .gita-book-scene.has-transition.is-closed .gita-front-cover-stage {
+    animation: gita-stage-in 320ms ease-out 200ms both;
+  }
+
+  .gita-book-scene.has-transition.is-closed .gita-book3d-body {
+    animation: gita-body-close 800ms cubic-bezier(0.3, 0.7, 0.2, 1) 250ms both;
+  }
+
+  .gita-book-scene.has-transition.is-closed .gita-book3d-lid {
+    animation: gita-lid-close 800ms cubic-bezier(0.3, 0.7, 0.2, 1) 250ms both;
+  }
+
+  @keyframes gita-lid-open {
+    from { transform: rotateY(0); }
+    to { transform: rotateY(-165deg); }
+  }
+
+  @keyframes gita-lid-close {
+    from { transform: rotateY(-165deg); }
+    to { transform: rotateY(0); }
+  }
+
+  @keyframes gita-body-open {
+    from { transform: rotateX(5deg) rotateY(-20deg); }
+    to { transform: rotateX(0) rotateY(0) translateX(24%) scale(1.06); }
+  }
+
+  @keyframes gita-body-close {
+    from { transform: rotateX(0) rotateY(0) translateX(24%) scale(1.06); }
+    to { transform: rotateX(5deg) rotateY(-20deg); }
+  }
+
+  @keyframes gita-stage-out {
+    0%, 66% { visibility: visible; opacity: 1; }
+    100% { visibility: hidden; opacity: 0; }
+  }
+
+  @keyframes gita-stage-in {
+    from { visibility: visible; opacity: 0; }
+    to { visibility: visible; opacity: 1; }
+  }
+
+  @keyframes gita-fade-out {
+    to { opacity: 0; }
+  }
+
+  @keyframes gita-pages-in {
+    from { visibility: visible; opacity: 0; transform: scale(0.965) translateY(10px); }
+    to { visibility: visible; opacity: 1; transform: none; }
+  }
+
+  @keyframes gita-pages-out {
+    from { visibility: visible; opacity: 1; transform: none; }
+    to { visibility: hidden; opacity: 0; transform: scale(0.97); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gita-book3d-body {
+    transition: none;
   }
 }

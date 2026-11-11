@@ -71,6 +71,4 @@ There is no `venv\Scripts\python.exe`.
   question uses about 5.8K tokens (splitter + answer), so roughly one
   question per minute before a 429.
 - `RecitationSanctuary.tsx` is not mounted anywhere.
-- `animate-fade-in` (used in `AboutModal`) and `font-cinzel-dec` (Cinzel
-  Decorative is not loaded) are referenced but not defined. `src/App.css` is
-  unused Vite boilerplate.
+- `font-cinzel-dec` points at Cinzel Decorative, which is not loaded.

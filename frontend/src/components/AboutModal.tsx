@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Sparkles, Compass, Cpu } from 'lucide-react';
+import { X, Compass, BookOpen, Headphones, Cpu } from 'lucide-react';
 import { VyomLogo } from './VyomLogo';
 
 interface AboutModalProps {
@@ -38,28 +38,37 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
         <div className="overflow-y-auto my-4 pr-1 space-y-4 text-xs md:text-sm text-[#6A5A48] leading-relaxed">
           <div className="p-4 rounded-xl bg-[#FFFDF8]/70 border border-[#C5A059]/20 space-y-2">
             <h4 className="font-cinzel text-xs font-bold text-[#E28743] uppercase tracking-wider flex items-center gap-2">
-              <Compass className="w-4 h-4" /> 3D Kurukshetra Diorama (Rathachakra-Dhari)
+              <Compass className="w-4 h-4" /> Gateway &amp; Sanctuary
             </h4>
             <p>
-              Showcasing the turning point of the Mahabharata: Lord Sri Krishna leaping forward from the golden royal chariot, clutching aloft the spiked chariot wheel in place of His Sudarshana Chakra, as Partha (Arjuna) clings to His lotus feet in total surrender, begging Him not to break His vow of non-combat.
+              A short film of the Kurukshetra field opens VYOM, then fades into a quiet cream-and-gold sanctuary where you can ask a question, open the five Gita pillars, or begin reading.
             </p>
           </div>
 
           <div className="p-4 rounded-xl bg-[#FFFDF8]/70 border border-[#C5A059]/20 space-y-2">
             <h4 className="font-cinzel text-xs font-bold text-[#E28743] uppercase tracking-wider flex items-center gap-2">
-              <Cpu className="w-4 h-4" /> Multimodal Architecture & RAG Pipeline
+              <BookOpen className="w-4 h-4" /> The Sacred Book
             </h4>
             <p>
-              VYOM indexes the complete corpus of 701 Sanskrit verses, including transliterations, word-by-word meanings, and authoritative commentaries from Adi Shankaracharya, Sri Ramanuja, and Swami Chinmayananda. Dense retrieval powers context grounding with conversational neighbor expansion (+1, +2 verses) to guarantee dialogue coherence.
+              All 701 verses, chapter by chapter, in Devanagari with transliteration and English from five translators: Swami Sivananda, Swami Gambirananda, Swami Adidevananda, Dr. S. Sankaranarayan and Shri Purohit Swami. Any verse can be shared as a quote card.
             </p>
           </div>
 
           <div className="p-4 rounded-xl bg-[#FFFDF8]/70 border border-[#C5A059]/20 space-y-2">
             <h4 className="font-cinzel text-xs font-bold text-[#E28743] uppercase tracking-wider flex items-center gap-2">
-              <Sparkles className="w-4 h-4" /> Sanskrit Audio Synthesis & Quote Studio
+              <Headphones className="w-4 h-4" /> Recitation
             </h4>
             <p>
-              Integrated Web Audio API Tanpura drone (Sa-Pa harmonic frequencies) and classical Vedic Anushtup meter recitation player, paired with an instant canvas-rendered quote card generator for sharing timeless insights.
+              Each shloka has a real recited clip, cut from a full chanting of the Gita. Where the reciter joins lines across two verses, the clip is marked as shared with its neighbour.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-xl bg-[#FFFDF8]/70 border border-[#C5A059]/20 space-y-2">
+            <h4 className="font-cinzel text-xs font-bold text-[#E28743] uppercase tracking-wider flex items-center gap-2">
+              <Cpu className="w-4 h-4" /> Grounded Answers
+            </h4>
+            <p>
+              Answers are drawn only from the verses VYOM retrieves, along with the verses that follow them in the dialogue and classical commentaries such as Sri Shankaracharya, Sri Ramanujacharya and Swami Chinmayananda. Quotes are checked against the source text, and any sentence that cannot be supported is removed.
             </p>
           </div>
         </div>
@@ -70,7 +79,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             onClick={onClose}
             className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#E28743] to-[#C5A059] text-[#F4ECE1] font-cinzel text-xs font-bold shadow-md hover:brightness-110"
           >
-            Enter Kurukshetra
+            Return to the sanctuary
           </button>
         </div>
       </div>

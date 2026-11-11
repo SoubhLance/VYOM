@@ -168,7 +168,8 @@ export const QuoteCardModal: React.FC<QuoteCardModalProps> = ({
 
     // 6. Romanized Transliteration
     ctx.fillStyle = palettes.goldText;
-    ctx.font = 'italic 20px "Cinzel", serif';
+    // Same IAST face as the Sacred Book; Cinzel has no lowercase and breaks diacritics
+    ctx.font = 'italic 20px Georgia, "Times New Roman", serif';
     const transLines = verse.transliteration.split('\n');
     let transY = sanskritY + 35;
     transLines.forEach((line) => {

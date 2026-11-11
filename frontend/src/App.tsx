@@ -33,6 +33,7 @@ export function App() {
   const [backgroundVideoFailed, setBackgroundVideoFailed] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const transitionStarted = useRef(false);
+  const sendInFlightRef = useRef(false);
   const [activeVerse, setActiveVerse] = useState<GitaVerse | null>(null);
   const [isVerseModalOpen, setIsVerseModalOpen] = useState(false);
   const [quoteVerse, setQuoteVerse] = useState<GitaVerse | null>(null);
@@ -45,7 +46,7 @@ export function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([{
     id: 'welcome-1', sender: 'assistant',
     text: '### Welcome, seeker\n\nBring a question about duty, relationships, fear, or the nature of the self. I will draw on the Bhagavad Gita and its traditional commentaries to help you reflect.\n\nBegin with a sacred inquiry below, or share what is on your mind.',
-    citedVerses: ['2.47', '18.66'], timestamp: 'Welcome',
+    citedVerses: ['2.47', '18.66'], chipsLabel: 'Begin with', timestamp: 'Welcome',
   }]);
 
   const checkHealth = useCallback(async () => {
@@ -129,6 +130,9 @@ export function App() {
   const openVerse = (id: string) => { const verse = lookupVerse(id); if (verse) { setActiveVerse(verse); setIsVerseModalOpen(true); } };
   const handleOpenQuoteCard = (verse: GitaVerse) => { setQuoteVerse(verse); setIsQuoteModalOpen(true); };
   const handleSendMessage = async (queryText: string) => {
+    // One request at a time: buttons disable on isLoading, but a double click can land before the re-render
+    if (sendInFlightRef.current) return;
+    sendInFlightRef.current = true;
     setMessages((prev) => [...prev, { id: `user-${Date.now()}`, sender: 'user', text: queryText, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
     setIsLoading(true); setErrorBannerText(null);
     try {
@@ -151,7 +155,7 @@ export function App() {
     } catch (err) {
       setErrorBannerText(err instanceof Error ? err.message : 'The consultation service is temporarily unavailable.');
       setMessages((prev) => [...prev, { id: `assistant-${Date.now()}`, sender: 'assistant', text: '### A moment for reflection\n\nWhile the consultation service reconnects, remember **BG 2.47**: focus on sincere action, without attachment to its results.', citedVerses: ['2.47'], timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), isOfflineFallback: true }]);
-    } finally { setIsLoading(false); }
+    } finally { sendInFlightRef.current = false; setIsLoading(false); }
   };
   const handleThemeSelect = (theme: string) => {
     const prompts: Record<string, string> = {

@@ -25,6 +25,8 @@ export interface ChatMessage {
   subQuestions?: string[];
   warnings?: string[];
   sources?: Source[];
+  /** Label for the verse chips when there are no rich sources (default "Cited Verses") */
+  chipsLabel?: string;
 }
 
 interface ChatPanelProps {
@@ -68,6 +70,96 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  /** Verse ids cited in a piece of answer text, in order of first appearance */
+  const citedVerseIds = (text: string): string[] => {
+    const ids: string[] = [];
+    const re = /\bBG\s*([1-9]|1[0-8])[.:]([1-9]|[1-6][0-9]|7[0-8])\b/gi;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(text)) !== null) {
+      const vid = `${parseInt(m[1], 10)}.${parseInt(m[2], 10)}`;
+      if (!ids.includes(vid)) ids.push(vid);
+    }
+    return ids;
+  };
+
+  /**
+   * Split a multi-question answer at its "### n. <sub-question>" headings.
+   * Returns null unless there are at least two numbered sections within range,
+   * so unexpected formats fall back to the plain layout.
+   */
+  const splitAnswerSections = (text: string, questionCount: number) => {
+    const matches = [...text.matchAll(/^###\s*(\d+)\.\s.*$/gm)];
+    if (matches.length < 2) return null;
+    const sections = matches.map((m, k) => ({
+      index: parseInt(m[1], 10) - 1,
+      text: text.slice(m.index ?? 0, k + 1 < matches.length ? matches[k + 1].index : text.length).trim(),
+    }));
+    if (sections.some((s) => s.index < 0 || s.index >= questionCount)) return null;
+    return { intro: text.slice(0, matches[0].index).trim(), sections };
+  };
+
+  const NEARBY_LIMIT = 3;
+
+  /** Related verses not cited in the answer: collapsed, at most NEARBY_LIMIT, in retrieval order */
+  const renderNearby = (sources: Source[]) => {
+    const nearby = sources.slice(0, NEARBY_LIMIT);
+    if (nearby.length === 0) return null;
+    return (
+      <details className="group rounded-xl border border-[#C5A059]/25 bg-[#FAF6EB]/50 p-2.5 transition-all text-xs">
+        <summary className="font-cinzel font-semibold text-[#8C2D19] cursor-pointer list-none flex items-center justify-between select-none py-0.5">
+          <span className="flex items-center gap-1.5">
+            <BookOpen className="w-3.5 h-3.5 text-[#E28743]" />
+            Nearby verses ({nearby.length})
+          </span>
+          <span className="text-[10px] text-[#A27427] font-sans group-open:rotate-180 transition-transform">▼</span>
+        </summary>
+        <div className="mt-2.5 space-y-2 pt-2 border-t border-[#C5A059]/15">{nearby.map(renderSourceCard)}</div>
+      </details>
+    );
+  };
+
+  const renderSourceCard = (s: Source) => {
+    const verseObj = lookupVerse(s.verse_id);
+
+    return (
+      <div
+        key={s.verse_id}
+        className="rounded-xl border border-[#C5A059]/30 bg-[#FFFDF8]/90 p-3 space-y-2 shadow-sm transition-all hover:border-[#C5A059]/60"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="font-cinzel text-xs font-bold text-[#8C2D19] bg-[#F1E0BB]/60 px-2 py-0.5 rounded-md border border-[#C5A059]/30">
+              BG {s.verse_id}
+            </span>
+            {s.is_neighbor && s.neighbor_of && (
+              <span className="text-[10px] font-cinzel text-[#6A5A48] italic">(Context for BG {s.neighbor_of})</span>
+            )}
+          </div>
+          {verseObj && (
+            <button
+              onClick={() => onOpenVerseDetail(verseObj)}
+              className="text-[11px] font-cinzel font-semibold text-[#8C2D19] hover:text-[#2C261F] flex items-center gap-1 transition-colors"
+              title="View full verse details"
+            >
+              <span>Exposition</span>
+              <ArrowUpRight className="w-3 h-3 opacity-70" />
+            </button>
+          )}
+        </div>
+
+        {s.sanskrit && (
+          <p className="font-sanskrit text-xs text-[#2C261F] leading-relaxed" lang="sa">
+            {s.sanskrit}
+          </p>
+        )}
+
+        {s.transliteration && <p className="iast text-xs leading-relaxed">{s.transliteration}</p>}
+
+        {s.clips && s.clips.length > 0 && <ClipPlayer clips={s.clips} />}
+      </div>
+    );
+  };
+
   /**
    * Format message text into styled paragraphs, quotes, and headings
    */
@@ -102,7 +194,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         return (
           <blockquote
             key={idx}
-            className="my-1.5 pl-3.5 py-1 border-l-2 border-[#C5A059]/60 bg-[#FFFDF8]/40 rounded-r-lg font-cinzel text-xs md:text-sm text-[#2C261F] italic"
+            className="iast my-1.5 pl-3.5 py-1 border-l-2 border-[#C5A059]/60 bg-[#FFFDF8]/40 rounded-r-lg text-xs md:text-sm leading-relaxed"
           >
             {line.replace('> ', '')}
           </blockquote>
@@ -136,7 +228,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
       }
       if (part.startsWith('*') && part.endsWith('*')) {
         return (
-          <em key={i} className="italic text-[#6A5A48]">
+          <em key={i} className="iast">
             {part.slice(1, -1)}
           </em>
         );
@@ -216,19 +308,59 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                 </p>
               ) : (
                 <div className="space-y-1">
-                  {formatGitaResponse(msg.text)}
+                  {(() => {
+                    const sectioned = (msg.subQuestions?.length ?? 0) > 1 && msg.sources && msg.sources.length > 0
+                      ? splitAnswerSections(msg.text, msg.subQuestions!.length)
+                      : null;
+                    if (!sectioned) return formatGitaResponse(msg.text);
+
+                    // Each section, then the verse cards it cites (each verse shown once)
+                    const sources = msg.sources ?? [];
+                    const shown = new Set<string>();
+                    return (
+                      <>
+                        {sectioned.intro && formatGitaResponse(sectioned.intro)}
+                        {sectioned.sections.map((sec) => {
+                          const ids = citedVerseIds(sec.text);
+                          const cards = sources.filter((s) => ids.includes(s.verse_id) && !shown.has(s.verse_id));
+                          const sharedHere = sources.filter((s) => ids.includes(s.verse_id) && shown.has(s.verse_id));
+                          cards.forEach((s) => shown.add(s.verse_id));
+                          return (
+                            <section key={sec.index} className="space-y-2 pb-2">
+                              <div className="space-y-1">{formatGitaResponse(sec.text)}</div>
+                              {cards.length > 0 && <div className="grid grid-cols-1 gap-2">{cards.map(renderSourceCard)}</div>}
+                              {sharedHere.length > 0 && (
+                                <p className="text-[11px] text-[#6A5A48] italic">
+                                  Also draws on {sharedHere.map((s) => `BG ${s.verse_id}`).join(', ')}, shown above.
+                                </p>
+                              )}
+                            </section>
+                          );
+                        })}
+                        {renderNearby(sources.filter((s) => !shown.has(s.verse_id)))}
+                      </>
+                    );
+                  })()}
 
                   {/* Warning Note when quotes failed strict verification */}
                   {msg.warnings && msg.warnings.length > 0 && (
                     <div className="mt-2.5 pt-2 border-t border-[#C5A059]/15 flex items-center gap-1.5 text-[11px] font-cinzel text-amber-800/80 italic">
                       <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                      <span>Some quotes could not be checked against the translations</span>
+                      <span>
+                        {msg.warnings.some((w) => w !== 'truncated')
+                          ? 'Some quotes could not be checked against the translations'
+                          : 'This answer was cut short'}
+                      </span>
                     </div>
                   )}
 
                   {/* Sources / Cited Verses Bar */}
                   {(() => {
                     const hasSources = msg.sources && msg.sources.length > 0;
+                    // Sectioned answers already placed their cards next to each section
+                    if (hasSources && (msg.subQuestions?.length ?? 0) > 1 && splitAnswerSections(msg.text, msg.subQuestions!.length)) {
+                      return null;
+                    }
 
                     // Fallback to local gitaVerses data if backend sources array is empty
                     if (!hasSources) {
@@ -237,7 +369,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                       return (
                         <div className="mt-4 pt-3 border-t border-[#C5A059]/15 flex flex-wrap items-center gap-2">
                           <span className="font-cinzel text-[10px] uppercase tracking-wider text-[#C5A059]/80 font-bold flex items-center gap-1">
-                            <BookOpen className="w-3 h-3 text-[#E28743]" /> Cited Verses:
+                            <BookOpen className="w-3 h-3 text-[#E28743]" /> {msg.chipsLabel ?? 'Cited Verses'}:
                           </span>
 
                           {msg.citedVerses.map((vid) => {
@@ -305,62 +437,16 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                     const subQuestions = msg.subQuestions ?? [];
                     const hasMultipleQuestions = subQuestions.length > 1;
 
-                    const renderSourceCard = (s: Source) => {
-                      const verseObj = lookupVerse(s.verse_id);
-
-                      return (
-                        <div
-                          key={s.verse_id}
-                          className="rounded-xl border border-[#C5A059]/30 bg-[#FFFDF8]/90 p-3 space-y-2 shadow-sm transition-all hover:border-[#C5A059]/60"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="font-cinzel text-xs font-bold text-[#8C2D19] bg-[#F1E0BB]/60 px-2 py-0.5 rounded-md border border-[#C5A059]/30">
-                                BG {s.verse_id}
-                              </span>
-                              {s.is_neighbor && s.neighbor_of && (
-                                <span className="text-[10px] font-cinzel text-[#6A5A48] italic">
-                                  (Context for BG {s.neighbor_of})
-                                </span>
-                              )}
-                            </div>
-                            {verseObj && (
-                              <button
-                                onClick={() => onOpenVerseDetail(verseObj)}
-                                className="text-[11px] font-cinzel font-semibold text-[#8C2D19] hover:text-[#2C261F] flex items-center gap-1 transition-colors"
-                                title="View full verse details"
-                              >
-                                <span>Exposition</span>
-                                <ArrowUpRight className="w-3 h-3 opacity-70" />
-                              </button>
-                            )}
-                          </div>
-
-                          {s.sanskrit && (
-                            <p className="font-sanskrit text-xs text-[#2C261F] leading-relaxed" lang="sa">
-                              {s.sanskrit}
-                            </p>
-                          )}
-
-                          {s.transliteration && (
-                            <p className="font-cinzel text-[11px] text-[#6A5A48] italic leading-normal">
-                              {s.transliteration}
-                            </p>
-                          )}
-
-                          {s.clips && s.clips.length > 0 && <ClipPlayer clips={s.clips} />}
-                        </div>
-                      );
-                    };
-
                     return (
                       <div className="mt-4 pt-3 border-t border-[#C5A059]/20 space-y-4">
                         {/* Primary Sources */}
                         {hasMultipleQuestions && subQuestions.some((_, i) => primarySources.some((s) => s.for_question?.includes(i))) ? (
                           <div className="space-y-4">
                             {subQuestions.map((sq, i) => {
-                              const qSources = primarySources.filter((s) => s.for_question?.includes(i));
-                              if (qSources.length === 0) return null;
+                              // Show each verse once, under the first sub-question it serves
+                              const qSources = primarySources.filter((s) => s.for_question?.includes(i) && Math.min(...(s.for_question ?? [i])) === i);
+                              const sharedHere = primarySources.filter((s) => s.for_question?.includes(i) && Math.min(...(s.for_question ?? [i])) < i);
+                              if (qSources.length === 0 && sharedHere.length === 0) return null;
                               return (
                                 <div key={i} className="space-y-2">
                                   <h5 className="font-cinzel text-xs font-bold text-[#8C2D19] flex items-center gap-1.5 tracking-wide">
@@ -370,6 +456,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                                   <div className="grid grid-cols-1 gap-2">
                                     {qSources.map(renderSourceCard)}
                                   </div>
+                                  {sharedHere.length > 0 && (
+                                    <p className="text-[11px] text-[#6A5A48] italic">
+                                      Also draws on {sharedHere.map((s) => `BG ${s.verse_id}`).join(', ')}, shown above.
+                                    </p>
+                                  )}
                                 </div>
                               );
                             })}
@@ -387,23 +478,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                           )
                         )}
 
-                        {/* Nearby Sources in a Collapsed "Nearby verses" Section */}
-                        {nearbySources.length > 0 && (
-                          <details className="group rounded-xl border border-[#C5A059]/25 bg-[#FAF6EB]/50 p-2.5 transition-all text-xs">
-                            <summary className="font-cinzel font-semibold text-[#8C2D19] cursor-pointer list-none flex items-center justify-between select-none py-0.5">
-                              <span className="flex items-center gap-1.5">
-                                <BookOpen className="w-3.5 h-3.5 text-[#E28743]" />
-                                Nearby verses ({nearbySources.length})
-                              </span>
-                              <span className="text-[10px] text-[#A27427] font-sans group-open:rotate-180 transition-transform">
-                                ▼
-                              </span>
-                            </summary>
-                            <div className="mt-2.5 space-y-2 pt-2 border-t border-[#C5A059]/15">
-                              {nearbySources.map(renderSourceCard)}
-                            </div>
-                          </details>
-                        )}
+                        {renderNearby(nearbySources)}
                       </div>
                     );
                   })()}

@@ -71,7 +71,7 @@ export const VerseDetailModal: React.FC<VerseDetailModalProps> = ({
 
             {/* Transliteration */}
             <div className="pt-3 border-t border-[#C5A059]/15">
-              <p className="font-cinzel text-xs md:text-sm text-[#C5A059] italic tracking-wide whitespace-pre-line">
+              <p className="iast text-xs md:text-sm leading-relaxed whitespace-pre-line">
                 {verse.transliteration}
               </p>
             </div>

@@ -166,3 +166,38 @@
 .animate-pulse-glow {
   animation: pulseGlow 3s ease-in-out infinite;
 }
+
+/* IAST transliteration: same face as the Sacred Book (.gita-transliteration).
+   Never use Cinzel here — it has no lowercase, so ṇ, ṅ, ā etc. break. */
+.iast {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  color: #574638;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+/* Recitation play button: same look as the Sacred Book's "Play verse" */
+.vyom-play-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid #8C2D19;
+  border-radius: 0.65rem;
+  color: #FFF9EA;
+  background: #8C2D19;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background 180ms ease;
+}
+
+.vyom-play-button:hover {
+  background: #722312;
+}
+
+.vyom-play-button:focus-visible {
+  outline: 2px solid #C5A059;
+  outline-offset: 2px;
+}

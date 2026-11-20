@@ -270,7 +270,8 @@ def test_too_many_references_are_truncated_and_logged(api_state, caplog):
 
 def test_prompts_carry_grounding_rule():
     user_v2 = build_rag_prompt_v2("q", ["q"], [])
-    for text in (SYSTEM_PROMPT_V2, user_v2):
+    assert "\nInstructions:\n" not in user_v2  # rules live once, in the system prompt
+    for text in (SYSTEM_PROMPT_V2,):
         assert (
             "Only state what the cited verse says, and only cite a verse when you are using what it says. "
             "Never cite or quote a verse not shown above." in text

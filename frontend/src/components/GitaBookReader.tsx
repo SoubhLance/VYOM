@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type TouchEvent as ReactTouchEvent } from 'react';
 import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, List, Pause, Play, Search, Volume2, X } from 'lucide-react';
-import { GITA_VERSES } from '../data/gitaVerses';
+// Verse text and translations: canonical data (verses.jsonl -> public/verses + public/translations).
+// SHLOKA_DIRECTORY is used only for navigation order and the audio clip of each verse, never for text.
+import { loadChapterVerses, type ChapterVerses } from '../data/verseStore';
 import { CHAPTER_METAS, SHLOKA_DIRECTORY } from '../data/recitationIndex';
+import { splitIastSpeaker, splitSanskritSpeaker } from '../utils/speaker';
 import { onClipPlayEndOrPause, onClipPlayStart } from '../services/audioCoordinator';
 import { BookCoverArt } from './BookCoverArt';
 import './GitaBookReader.css';
@@ -10,15 +13,6 @@ interface GitaBookReaderProps {
   onBack: () => void;
   initialVerseId?: string | null;
 }
-
-interface VerseTranslation {
-  author: string;
-  text: string;
-}
-
-type ChapterTranslationMap = Record<string, VerseTranslation[]>;
-
-const chapterTranslationCache = new Map<number, ChapterTranslationMap>();
 
 const getVerseParts = (id: string | null | undefined) => {
   const match = id?.match(/^(\d{1,2})[.:](\d{1,3})$/);
@@ -47,6 +41,8 @@ export function GitaBookReader({ onBack, initialVerseId }: GitaBookReaderProps) 
   const [chapter, setChapter] = useState(initialVerse?.chapter ?? 1);
   const [verseNumber, setVerseNumber] = useState(initialVerse?.verse ?? 1);
   const [search, setSearch] = useState('');
+  // Phones: the verse search is one tap away (a toolbar icon) instead of taking a whole toolbar row
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [continuous, setContinuous] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentPlayingId, setCurrentPlayingId] = useState<string | null>(null);
@@ -54,15 +50,19 @@ export function GitaBookReader({ onBack, initialVerseId }: GitaBookReaderProps) 
   // Opened at a specific verse: start on the open pages (the cover is one click away)
   const [isBookOpen, setIsBookOpen] = useState(initialVerse !== null);
   const [hasBookTransitioned, setHasBookTransitioned] = useState(false);
-  const [chapterTranslations, setChapterTranslations] = useState<ChapterTranslationMap>({});
-  const [translationsLoadedFor, setTranslationsLoadedFor] = useState<number | null>(null);
-  const [translationLoadErrorFor, setTranslationLoadErrorFor] = useState<number | null>(null);
+  // Chapters whose verse files have arrived (verseStore caches the fetch; render reads only this state)
+  const [loadedChapters, setLoadedChapters] = useState<Record<number, ChapterVerses>>({});
+  const [chapterLoadErrorFor, setChapterLoadErrorFor] = useState<number | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const [selectedTranslationAuthor, setSelectedTranslationAuthor] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const continuousRef = useRef(continuous);
   const currentIdRef = useRef(initialVerse ? `${initialVerse.chapter}.${initialVerse.verse}` : '1.1');
   const activeChapterItemRef = useRef<HTMLDivElement | null>(null);
   const bookBodyRef = useRef<HTMLDivElement | null>(null);
+  // Phones: the folio scrolls as one page; a new verse starts at its top
+  const folioRef = useRef<HTMLElement | null>(null);
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const [coverImageFailed, setCoverImageFailed] = useState(false);
   // Page-turn leaf for Previous / Next (desktop only, via CSS); n restarts the animation
   const [pageTurn, setPageTurn] = useState<{ dir: 'next' | 'prev'; n: number } | null>(null);
@@ -72,62 +72,37 @@ export function GitaBookReader({ onBack, initialVerseId }: GitaBookReaderProps) 
     [chapter, verseNumber],
   );
   const chapterMeta = CHAPTER_METAS.find((item) => item.chapter === chapter);
-  const legacyVerse = currentVerse ? GITA_VERSES[currentVerse.verseId] : undefined;
-  const displaySanskrit = legacyVerse?.sanskrit ?? currentVerse?.sanskrit ?? '';
-  const displayTransliteration = legacyVerse?.transliteration ?? currentVerse?.transliteration ?? '';
-  const activeChapterTranslations = translationsLoadedFor === chapter
-    ? chapterTranslations
-    : chapterTranslationCache.get(chapter);
-  const translationsAreLoaded = activeChapterTranslations !== undefined;
-  const verseTranslations = translationsAreLoaded
-    ? activeChapterTranslations?.[currentVerse?.verseId ?? ''] ?? []
-    : [];
+  const chapterData: ChapterVerses | undefined = loadedChapters[chapter];
+  const chapterFailed = !chapterData && chapterLoadErrorFor === chapter;
+  const canonicalText = currentVerse ? chapterData?.text[currentVerse.verseId] : undefined;
+  // Speaker lines ("अर्जुन उवाच") become a small label above the verse, whether stored on their own line or glued on
+  const sanskritParts = splitSanskritSpeaker(canonicalText?.sanskrit);
+  const iastParts = splitIastSpeaker(canonicalText?.transliteration);
+  const displaySanskrit = sanskritParts.text;
+  const speakerLabel = sanskritParts.speaker;
+  const verseTranslations = chapterData && currentVerse ? chapterData.translations[currentVerse.verseId] ?? [] : [];
   const selectedTranslation = verseTranslations.find((entry) => entry.author === selectedTranslationAuthor)
     ?? verseTranslations[0];
 
   useEffect(() => {
     let active = true;
-    const cached = chapterTranslationCache.get(chapter);
-    if (cached) {
-      return () => { active = false; };
-    }
-
-    fetch(`/translations/ch${String(chapter).padStart(2, '0')}.json`)
-      .then((response) => {
-        if (!response.ok) throw new Error('Unable to load chapter translations.');
-        return response.json() as Promise<ChapterTranslationMap>;
-      })
+    loadChapterVerses(chapter)
       .then((data) => {
-        chapterTranslationCache.set(chapter, data);
-        if (active) {
-          setChapterTranslations(data);
-          setTranslationsLoadedFor(chapter);
-          setTranslationLoadErrorFor(null);
-        }
+        if (!active) return;
+        setChapterLoadErrorFor(null);
+        setLoadedChapters((prev) => (prev[chapter] === data ? prev : { ...prev, [chapter]: data }));
       })
       .catch(() => {
-        if (active) {
-          setChapterTranslations({});
-          setTranslationsLoadedFor(chapter);
-          setTranslationLoadErrorFor(chapter);
-        }
+        if (active) setChapterLoadErrorFor(chapter);
       });
     return () => { active = false; };
-  }, [chapter]);
-  const rawSanskritLines = useMemo(() => {
-    const text = displaySanskrit.trim();
-    if (!text) return [];
-    const lines = text.includes('\n')
-      ? text.split(/\r?\n/)
-      : /[।॥]/u.test(text)
-        ? text.replace(/([।॥])/gu, '$1\n').split(/\r?\n/)
-        : [text];
-    return lines.map((line) => line.trim()).filter(Boolean);
-  }, [displaySanskrit]);
-  const speakerLabel = ['श्रीभगवानुवाच', 'शरभगवनवच'].includes(rawSanskritLines[0] ?? '')
-    ? rawSanskritLines[0]
-    : '';
-  const sanskritLines = speakerLabel ? rawSanskritLines.slice(1) : rawSanskritLines;
+  }, [chapter, retryCount]);
+  // Glued verses (no line breaks) get one line per danda
+  const sanskritText = displaySanskrit.trim();
+  const sanskritLines = (sanskritText.includes('\n')
+    ? sanskritText.split(/\r?\n/)
+    : sanskritText.replace(/([।॥])/gu, '$1\n').split(/\r?\n/)
+  ).map((line) => line.trim()).filter(Boolean);
   const hasDoubleDanda = /॥\s*$/u.test(displaySanskrit);
   const chapterVerses = useMemo(
     () => SHLOKA_DIRECTORY.filter((item) => item.chapter === chapter),
@@ -251,6 +226,25 @@ export function GitaBookReader({ onBack, initialVerseId }: GitaBookReaderProps) 
     setHasBookTransitioned(true);
     setIsBookOpen(true);
   };
+  useEffect(() => {
+    folioRef.current?.scrollTo({ top: 0 });
+  }, [chapter, verseNumber]);
+
+  // Touch swipe on the book: left = next verse, right = previous (a mostly horizontal swipe of 60px+)
+  const onSwipeStart = (event: ReactTouchEvent) => {
+    const t = event.touches[0];
+    swipeStart.current = { x: t.clientX, y: t.clientY };
+  };
+  const onSwipeEnd = (event: ReactTouchEvent) => {
+    const start = swipeStart.current;
+    swipeStart.current = null;
+    const t = event.changedTouches[0];
+    if (!start || !t) return;
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    if (Math.abs(dx) >= 60 && Math.abs(dx) > Math.abs(dy) * 2) changeVerse(dx < 0 ? 1 : -1);
+  };
+
   const closeBook = () => {
     setIsContentsOpen(false);
     setHasBookTransitioned(true);
@@ -318,7 +312,7 @@ export function GitaBookReader({ onBack, initialVerseId }: GitaBookReaderProps) 
 
         <div className="gita-book-pages-view" aria-hidden={!isBookOpen}>
       <header className="gita-book-toolbar royal-card mb-3 flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-2xl border border-[#C5A059]/30 px-3 py-2.5 shadow-sm sm:px-4">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3 max-md:hidden">
           <button onClick={onBack} aria-label="Return to Sanctuary / Chat" className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[#C5A059]/40 bg-white/75 px-2.5 py-2 text-xs font-semibold text-[#704B20] hover:bg-[#FFFDF8] sm:px-3 sm:text-sm">
             <ArrowLeft className="h-4 w-4" /><span className="hidden sm:inline">Return to Sanctuary / Chat</span><span className="hidden min-[481px]:inline sm:hidden">Back to chat</span>
           </button>
@@ -328,28 +322,36 @@ export function GitaBookReader({ onBack, initialVerseId }: GitaBookReaderProps) 
           </div>
           <button onClick={closeBook} title="Close Book / View Cover" aria-label="Close Book / View Cover" className="gita-cover-return-button"><span className="max-[480px]:hidden">Close Book / View Cover</span><span aria-hidden="true" className="min-[481px]:hidden">Cover</span></button>
         </div>
+        {/* Phones: one compact row (back, contents, chapter, search, cover); every target is 44px */}
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap">
-          <button onClick={() => setIsContentsOpen(true)} aria-expanded={isContentsOpen} className="inline-flex items-center gap-1.5 rounded-xl border border-[#C5A059]/35 bg-white/75 px-3 py-2 text-xs font-semibold text-[#704B20] hover:bg-[#FFFDF8]">
-            <List className="h-4 w-4 text-[#A27427]" /> Contents
+          <button onClick={onBack} aria-label="Return to chat" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#C5A059]/40 bg-white/75 text-[#704B20] hover:bg-[#FFFDF8] md:hidden">
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           </button>
-          <label className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-[#C5A059]/35 bg-white/75 px-3 py-2 text-xs text-[#6A5A48] sm:min-w-[230px] sm:flex-none">
-            <BookOpen className="h-4 w-4 shrink-0 text-[#A27427]" />
-            <span className="shrink-0 max-[480px]:sr-only">Chapter</span>
+          <button onClick={() => setIsContentsOpen(true)} aria-expanded={isContentsOpen} aria-label="Contents" className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[#C5A059]/35 bg-white/75 px-3 py-2 text-xs font-semibold text-[#704B20] hover:bg-[#FFFDF8] max-md:h-11 max-md:w-11 max-md:justify-center max-md:px-0">
+            <List className="h-4 w-4 text-[#A27427]" aria-hidden="true" /><span className="max-md:hidden">Contents</span>
+          </button>
+          <label className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-[#C5A059]/35 bg-white/75 px-3 py-2 text-xs text-[#6A5A48] max-md:h-11 sm:min-w-[230px] sm:flex-none">
+            <BookOpen className="h-4 w-4 shrink-0 text-[#A27427] max-md:hidden" />
+            <span className="shrink-0 max-md:sr-only">Chapter</span>
             <select value={chapter} onChange={(event) => selectVerse(Number(event.target.value), 1)} title={chapterMeta ? `Chapter ${chapterMeta.chapter} · ${chapterMeta.englishTitle}` : undefined} className="min-w-0 flex-1 bg-transparent font-semibold text-[#704B20] outline-none">
               {CHAPTER_METAS.map((meta) => <option key={meta.chapter} value={meta.chapter}>{meta.chapter} · {meta.englishTitle}</option>)}
             </select>
           </label>
-          <form className="flex min-w-0 flex-1 rounded-xl border border-[#C5A059]/35 bg-white/75 max-[480px]:basis-full sm:flex-none" onSubmit={(event) => { event.preventDefault(); jumpToSearch(); }}>
+          <button type="button" onClick={() => setIsSearchOpen((open) => !open)} aria-expanded={isSearchOpen} aria-label="Find a verse" className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border text-[#704B20] md:hidden ${isSearchOpen ? 'border-[#A27427] bg-[#F1E0BB]' : 'border-[#C5A059]/35 bg-white/75'}`}>
+            <Search className="h-4 w-4" aria-hidden="true" />
+          </button>
+          <button onClick={closeBook} aria-label="Close Book / View Cover" className="gita-cover-return-button h-11 md:hidden">Cover</button>
+          <form className={`flex min-w-0 flex-1 rounded-xl border border-[#C5A059]/35 bg-white/75 max-md:h-11 max-md:basis-full sm:flex-none ${isSearchOpen ? '' : 'max-md:hidden'}`} onSubmit={(event) => { event.preventDefault(); jumpToSearch(); setIsSearchOpen(false); }}>
             <label className="flex min-w-0 flex-1 items-center gap-2 px-3 sm:flex-none">
               <Search className="h-4 w-4 shrink-0 text-[#A27427]" />
-              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Find verse, e.g. 2.47" aria-label="Find verse" className="w-full min-w-0 bg-transparent py-2 text-sm text-[#2C261F] outline-none placeholder:text-[#8C7B68] sm:w-36" />
+              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Find verse, e.g. 2.47" aria-label="Find verse" inputMode="decimal" className="w-full min-w-0 bg-transparent py-2 text-base text-[#2C261F] outline-none placeholder:text-[#8C7B68] sm:w-36 md:text-sm" />
             </label>
             <button type="submit" className="rounded-r-xl border-l border-[#C5A059]/30 px-3 text-xs font-semibold text-[#8C2D19] hover:bg-[#F4ECE1]">Go</button>
           </form>
         </div>
       </header>
 
-      <section className="gita-book-cover min-h-0 flex-1 rounded-[1.35rem] p-[7px] sm:p-3" aria-label="Sacred book folio">
+      <section ref={folioRef} onTouchStart={onSwipeStart} onTouchEnd={onSwipeEnd} className="gita-book-cover min-h-0 flex-1 rounded-[1.35rem] p-[7px] sm:p-3" aria-label="Sacred book folio">
         <div className="gita-book-spread">
           {pageTurn && <div key={pageTurn.n} aria-hidden="true" className={`gita-page-leaf is-${pageTurn.dir}`} onAnimationEnd={() => setPageTurn(null)} />}
           {currentVerse && chapterMeta ? <>
@@ -359,12 +361,20 @@ export function GitaBookReader({ onBack, initialVerseId }: GitaBookReaderProps) 
               </header>
               <div key={currentVerse.verseId} className="gita-page-scroll gita-sanskrit-content gita-verse-enter">
                 <div aria-hidden="true" className="gita-page-ornament"><span>✦</span><i /><span>❧</span><i /><span>✦</span></div>
-                {speakerLabel && <p className="gita-speaker-label font-sanskrit" lang="sa">{speakerLabel}</p>}
-                <div className="gita-sanskrit-lines" lang="sa">
-                  {sanskritLines.map((line, index) => <p key={`${index}-${line}`} className="font-sanskrit" style={{ '--line': index } as CSSProperties}>{line}</p>)}
-                  {!hasDoubleDanda && <p className="gita-verse-end font-sanskrit">{chapter}.{verseNumber}</p>}
-                </div>
-                {displayTransliteration && <p className="gita-transliteration">{displayTransliteration}</p>}
+                {canonicalText ? <>
+                  {speakerLabel && <p className="gita-speaker-label font-sanskrit" lang="sa">{speakerLabel}</p>}
+                  <div className="gita-sanskrit-lines" lang="sa">
+                    {sanskritLines.map((line, index) => <p key={`${index}-${line}`} className="font-sanskrit" style={{ '--line': index } as CSSProperties}>{line}</p>)}
+                    {!hasDoubleDanda && <p className="gita-verse-end font-sanskrit">{chapter}.{verseNumber}</p>}
+                  </div>
+                  {iastParts.text && <div className="gita-transliteration">
+                    {iastParts.speaker && <span className="gita-transliteration-speaker">{iastParts.speaker}</span>}
+                    <span>{iastParts.text}</span>
+                  </div>}
+                </> : chapterFailed ? <div className="gita-translation-status" role="alert">
+                  The verse text could not be loaded.{' '}
+                  <button type="button" className="gita-retry-link" onClick={() => setRetryCount((n) => n + 1)}>Try again</button>
+                </div> : <p className="gita-translation-status" role="status">Loading the verse…</p>}
               </div>
               <footer className="gita-page-number gita-page-number-left">{chapter}.{verseNumber}</footer>
             </section>
@@ -386,10 +396,9 @@ export function GitaBookReader({ onBack, initialVerseId }: GitaBookReaderProps) 
                     <p className="gita-translation">{selectedTranslation.text}</p>
                     <p className="gita-translation-author">Translation: {selectedTranslation.author}</p>
                   </>}
-                  {!selectedTranslation && !translationsAreLoaded && translationLoadErrorFor !== chapter && <p className="gita-translation-status">Loading translations…</p>}
-                  {!selectedTranslation && translationsAreLoaded && translationLoadErrorFor === chapter && <p className="gita-translation-status">Translations could not be loaded.</p>}
-                  {!selectedTranslation && translationsAreLoaded && translationLoadErrorFor !== chapter && <p className="gita-translation-status">No English translation available for this verse.</p>}
-                  {legacyVerse && <aside className="gita-reflection"><h3>Commentary note · {legacyVerse.author}</h3><p>{legacyVerse.commentary_summary}</p></aside>}
+                  {!selectedTranslation && !chapterData && !chapterFailed && <p className="gita-translation-status">Loading translations…</p>}
+                  {!selectedTranslation && chapterFailed && <p className="gita-translation-status">Translations could not be loaded.</p>}
+                  {!selectedTranslation && chapterData && <p className="gita-translation-status">No English translation available for this verse.</p>}
                   <section className="gita-recitation-plate" aria-label="Verse recitation">
                     <div className="gita-recitation-copy"><span className="gita-recitation-icon"><Volume2 className="h-5 w-5" /></span><div><h3>Sacred recitation</h3><p>BG {currentVerse.verseId} · authentic verse audio</p></div></div>
                     <div className="gita-recitation-actions">
@@ -409,9 +418,19 @@ export function GitaBookReader({ onBack, initialVerseId }: GitaBookReaderProps) 
       </section>
 
       <footer className="gita-book-navigation flex shrink-0 items-center justify-between gap-2 pt-2.5">
-        <button onClick={() => changeVerse(-1)} disabled={isAtStart} className="inline-flex items-center gap-1 rounded-xl border border-[#C5A059]/40 bg-[#FFFDF8] px-3 py-2 text-xs font-semibold text-[#704B20] shadow-sm hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 sm:px-4 sm:text-sm"><ChevronLeft className="h-4 w-4" /> Previous Verse</button>
-        <span className="text-center font-cinzel text-[10px] font-semibold text-[#6A5A48] sm:text-xs">Verse {Math.max(verseIndex + 1, 1)} of {SHLOKA_DIRECTORY.length}</span>
-        <button onClick={() => changeVerse(1)} disabled={isAtEnd} className="inline-flex items-center gap-1 rounded-xl border border-[#C5A059]/40 bg-[#FFFDF8] px-3 py-2 text-xs font-semibold text-[#704B20] shadow-sm hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 sm:px-4 sm:text-sm">Next Verse <ChevronRight className="h-4 w-4" /></button>
+        <button onClick={() => changeVerse(-1)} disabled={isAtStart} aria-label="Previous verse" className="inline-flex items-center gap-1 rounded-xl border border-[#C5A059]/40 bg-[#FFFDF8] px-3 py-2 text-xs font-semibold text-[#704B20] shadow-sm hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 max-md:h-11 sm:px-4 sm:text-sm"><ChevronLeft className="h-4 w-4" aria-hidden="true" /><span className="max-md:hidden">Previous Verse</span><span className="md:hidden">Prev</span></button>
+        <span className="text-center font-cinzel text-[10px] font-semibold text-[#6A5A48] max-md:hidden sm:text-xs">Verse {Math.max(verseIndex + 1, 1)} of {SHLOKA_DIRECTORY.length}</span>
+        {/* Phones: the recitation is always one tap away, not at the end of the English page */}
+        {/* The wrapper carries md:hidden: .vyom-play-button's own display (unlayered CSS) beats Tailwind's */}
+        {currentVerse && (
+          <div className="md:hidden">
+            <button onClick={() => playVerse(chapter, verseNumber)} aria-label={isCurrentPlaying ? `Pause recitation of BG ${currentVerse.verseId}` : `Play recitation of BG ${currentVerse.verseId}`} className="vyom-play-button h-11 min-w-0 justify-center">
+              {isCurrentPlaying ? <Pause className="h-4 w-4" aria-hidden="true" /> : <Play className="h-4 w-4" aria-hidden="true" />}
+              <span>{isCurrentPlaying ? 'Pause' : 'Play'} {currentVerse.verseId}</span>
+            </button>
+          </div>
+        )}
+        <button onClick={() => changeVerse(1)} disabled={isAtEnd} aria-label="Next verse" className="inline-flex items-center gap-1 rounded-xl border border-[#C5A059]/40 bg-[#FFFDF8] px-3 py-2 text-xs font-semibold text-[#704B20] shadow-sm hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 max-md:h-11 sm:px-4 sm:text-sm"><span className="max-md:hidden">Next Verse</span><span className="md:hidden">Next</span><ChevronRight className="h-4 w-4" aria-hidden="true" /></button>
       </footer>
         </div>
       </div>

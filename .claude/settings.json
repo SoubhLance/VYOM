@@ -1,0 +1,8 @@
+{
+  "env": {
+    "FORMAT_ON_EDIT_ONLY": "frontend/"
+  },
+  "permissions": {
+    "deny": ["Bash(git:*)", "Bash(git *)"]
+  }
+}

@@ -15,10 +15,12 @@ from qdrant_client import QdrantClient  # noqa: E402
 
 class Searcher:
     # Qdrant local mode allows one client per path, so create ONE Searcher per model and reuse it.
-    def __init__(self, model_key: str):
+    # Pass `client` to share one local Qdrant client between Searchers (the owner closes it).
+    def __init__(self, model_key: str, client: QdrantClient | None = None):
         self.key = model_key
         self.model = load_model(model_key)
-        self.client = QdrantClient(path=str(QDRANT_PATH))
+        self._owns_client = client is None
+        self.client = client if client is not None else QdrantClient(path=str(QDRANT_PATH))
         self.collection = collection_name(model_key)
 
     def search(self, query: str, k: int = 5, n_chunks: int = 30):
@@ -41,7 +43,8 @@ class Searcher:
         return [(h.payload["chunk_id"], h.payload["verse_id"], h.score) for h in hits]
 
     def close(self):
-        self.client.close()
+        if self._owns_client:
+            self.client.close()
 
 
 if __name__ == "__main__":

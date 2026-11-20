@@ -153,8 +153,70 @@ def clean_verse(v: dict) -> dict:
     }
 
 
+# ── hand-verified Sanskrit corrections (2026-11-11) ──────────────────
+# Typos in the source dataset. Applied after cleaning, so the raw pipeline reproduces
+# data/processed/verses.jsonl exactly. Each `old` must occur exactly once in its verse,
+# otherwise cleaning fails loudly (e.g. if the upstream data changes or gets fixed).
+# Variant readings are NOT typos and do not belong here (18.66 "त्वा" is deliberate).
+NUKTA = "़"
+SANSKRIT_CORRECTIONS: list[tuple[str, str, str]] = [
+    # (verse_id, old, new)
+    ("1.26", "पितृ" + NUKTA + "नथ", "पितृनथ"),                # stray nukta after ृ
+    ("1.26", "भ्रातृ" + NUKTA + "न्", "भ्रातृन्"),            # stray nukta after ृ
+    ("1.34", "श्चशुराः", "श्वशुराः"),                         # श्च -> श्व (father-in-law)
+    ("4.29", "प्राण प्राणेऽ", "प्राणं प्राणेऽ"),              # missing anusvara
+    ("4.31", "कुतो" + NUKTA + "ऽन्यः", "कुतोऽन्यः"),          # stray nukta before avagraha
+    ("9.25", "पितृ" + NUKTA + "न्यान्ति", "पितृन्यान्ति"),    # stray nukta after ृ
+    ("10.29", "पितृ" + NUKTA + "णामर्यमा", "पितृणामर्यमा"),  # stray nukta after ृ
+]
+
+
+def apply_sanskrit_corrections(verses: list[dict]) -> list[dict]:
+    """Apply SANSKRIT_CORRECTIONS in place. Raises ValueError if a verse or an `old` string is
+    missing or ambiguous, so a silently skipped fix can never reach the index."""
+    by_id = {v["verse_id"]: v for v in verses}
+    for vid, old, new in SANSKRIT_CORRECTIONS:
+        if vid not in by_id:
+            raise ValueError(f"Sanskrit correction for unknown verse {vid}")
+        text = by_id[vid]["sanskrit"]
+        n = text.count(old)
+        if n != 1:
+            raise ValueError(f"Sanskrit correction {vid}: expected 1 occurrence of {old!r}, found {n}")
+        by_id[vid]["sanskrit"] = text.replace(old, new, 1)
+    return verses
+
+
+# ── hand-verified English translation corrections (2026-11-19) ─────────
+# Typos in one translator's English text. Same contract as SANSKRIT_CORRECTIONS: `old` must occur
+# exactly once in that translator's text, or cleaning fails loudly.
+# PENDING: verses.jsonl / chunks.jsonl have not been regenerated and Qdrant has not been re-indexed
+# since this table was added, so the served data still has the typo (see CLAUDE.md, Known issues).
+ENGLISH_CORRECTIONS: list[tuple[str, str, str, str]] = [
+    # (verse_id, translator, old, new)
+    ("10.35", "Shri Purohit Swami", "of meters, I am Garatri", "of meters, I am Gayatri"),  # Gāyatrī metre
+]
+
+
+def apply_english_corrections(verses: list[dict]) -> list[dict]:
+    """Apply ENGLISH_CORRECTIONS in place. Raises ValueError if the verse, the translator or the
+    `old` string is missing or ambiguous."""
+    by_id = {v["verse_id"]: v for v in verses}
+    for vid, author, old, new in ENGLISH_CORRECTIONS:
+        if vid not in by_id:
+            raise ValueError(f"English correction for unknown verse {vid}")
+        entries = [t for t in by_id[vid].get("translations", {}).get("english", []) if t.get("author") == author]
+        if len(entries) != 1:
+            raise ValueError(f"English correction {vid}: expected 1 translation by {author!r}, found {len(entries)}")
+        n = entries[0]["text"].count(old)
+        if n != 1:
+            raise ValueError(f"English correction {vid}: expected 1 occurrence of {old!r}, found {n}")
+        entries[0]["text"] = entries[0]["text"].replace(old, new, 1)
+    return verses
+
+
 def load_clean() -> list[dict]:
-    return [clean_verse(v) for ch in load_raw_verses().values() for v in ch]
+    verses = apply_sanskrit_corrections([clean_verse(v) for ch in load_raw_verses().values() for v in ch])
+    return apply_english_corrections(verses)
 
 
 if __name__ == "__main__":

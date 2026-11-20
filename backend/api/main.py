@@ -35,7 +35,9 @@ from llm.client import (
     get_last_usage,
     get_last_model,
     get_last_fallback_used,
+    get_last_provider,
 )
+from llm.cache import ANSWER_CACHE, normalize_question, primary_model
 from retrieval.prompt import SYSTEM_PROMPT, build_rag_prompt
 from retrieval.router import (
     load_valid_ids,
@@ -48,6 +50,8 @@ from retrieval.router import (
 from retrieval.search import Searcher
 from retrieval.multi import retrieve_multi, decompose, is_single_topic_query
 from retrieval.prompt_v2 import SYSTEM_PROMPT_V2, build_rag_prompt_v2, commentary_excerpt
+from retrieval.premise import detach_premise_from_citations
+from retrieval import smalltalk
 from retrieval.verify_quotes import (
     unquote_paraphrases,
     normalize_single_quotes,
@@ -66,6 +70,35 @@ logger = logging.getLogger("vyom.api")
 logging.basicConfig(level=logging.INFO)
 
 VERSES_PATH = ROOT / "data" / "processed" / "verses.jsonl"
+# Serving embedding model. bge-base won the English benchmark (docs/BENCHMARK.md); bge-m3 is
+# multilingual and much better on Devanagari queries. Both Qdrant collections are built.
+EMBED_MODELS = ("bge-base", "bge-m3")
+DEFAULT_EMBED_MODEL = "bge-base"
+# Queries containing Devanagari go to the multilingual model (bge-base is English-only).
+MULTILINGUAL_EMBED_MODEL = "bge-m3"
+DEVANAGARI = re.compile(r"[\u0900-\u097F]")
+
+
+def embed_model_name() -> str:
+    """VYOM_EMBED_MODEL if it names a built index, else the default (an unknown value is logged)."""
+    name = (os.getenv("VYOM_EMBED_MODEL") or DEFAULT_EMBED_MODEL).strip()
+    if name not in EMBED_MODELS:
+        logger.warning("VYOM_EMBED_MODEL=%r is not one of %s; using %s", name, EMBED_MODELS, DEFAULT_EMBED_MODEL)
+        return DEFAULT_EMBED_MODEL
+    return name
+
+
+def script_routing_enabled() -> bool:
+    return os.getenv("VYOM_SCRIPT_ROUTING", "1").strip() != "0"
+
+
+def pick_searcher(state: Any, query: str) -> Any:
+    """Devanagari queries use the multilingual searcher when it is loaded; all others the default one."""
+    multilingual = getattr(state, "searcher_multilingual", None)
+    if multilingual is not None and DEVANAGARI.search(query):
+        logger.info("EMBED_ROUTE: Devanagari query -> %s", MULTILINGUAL_EMBED_MODEL)
+        return multilingual
+    return getattr(state, "searcher", None)
 
 
 def load_verse_store() -> dict[str, dict]:
@@ -211,7 +244,7 @@ async def lifespan(app: FastAPI):
     1. Preloads valid verse IDs from router.py into app.state.valid_ids.
     2. Preloads processed verse objects from data/processed/verses.jsonl into app.state.verse_store.
     3. Loads audio clips mapping once on startup via load_verse_clips().
-    4. Initializes Searcher engine once with bge-m3.
+    4. Initializes Searcher engine once with VYOM_EMBED_MODEL (default bge-base).
     """
     logger.info("Initializing VYOM API resources...")
 
@@ -240,16 +273,33 @@ async def lifespan(app: FastAPI):
 
     # Initialize vector Searcher (bge-m3)
     try:
-        logger.info("Initializing vector Searcher (bge-m3)...")
-        app.state.searcher = Searcher("bge-m3")
+        app.state.embed_model = embed_model_name()
+        logger.info("Initializing vector Searcher (%s)...", app.state.embed_model)
+        app.state.searcher = Searcher(app.state.embed_model)
         logger.info("Searcher initialized successfully.")
     except Exception as e:
         logger.error("Failed to initialize Searcher: %s", e)
         app.state.searcher = None
 
+    # Second, multilingual searcher for Devanagari queries, sharing the Qdrant client
+    app.state.searcher_multilingual = None
+    if (
+        app.state.searcher is not None
+        and script_routing_enabled()
+        and app.state.embed_model != MULTILINGUAL_EMBED_MODEL
+    ):
+        try:
+            logger.info("Initializing multilingual Searcher (%s) for Devanagari queries...", MULTILINGUAL_EMBED_MODEL)
+            app.state.searcher_multilingual = Searcher(MULTILINGUAL_EMBED_MODEL, client=app.state.searcher.client)
+        except Exception as e:
+            logger.error("Failed to initialize multilingual Searcher: %s", e)
+
     yield
 
-    # Clean up Searcher on shutdown
+    # Clean up Searchers on shutdown (the multilingual one shares the default one's client)
+    multilingual = getattr(app.state, "searcher_multilingual", None)
+    if multilingual is not None:
+        multilingual.close()
     searcher = getattr(app.state, "searcher", None)
     if searcher is not None:
         try:
@@ -290,6 +340,8 @@ def health_check():
     return {
         "status": "ok",
         "searcher_ready": getattr(app.state, "searcher", None) is not None,
+        "embed_model": getattr(app.state, "embed_model", None),
+        "devanagari_model": MULTILINGUAL_EMBED_MODEL if getattr(app.state, "searcher_multilingual", None) else None,
         "valid_ids_count": len(getattr(app.state, "valid_ids", [])),
     }
 
@@ -614,10 +666,32 @@ def strip_internal_labels(text: str) -> str:
     return ''.join(out)
 
 
+_NUMBERED_HEADING = re.compile(r"^[ \t]*#{1,6}[ \t]*\d+[.)][^\n]*(?:\n|$)", re.MULTILINE)
+
+
+def strip_single_section_heading(answer: str, n_sub_questions: int | None) -> str:
+    """With one sub-question the answer gets no heading (prompt rule 2), but some models (gpt-oss-20b,
+    Gemini) still open with '### 1. <question>'. Drop it when it is the only numbered heading and it
+    opens the answer."""
+    if n_sub_questions != 1:
+        return answer
+    headings = list(_NUMBERED_HEADING.finditer(answer))
+    if len(headings) != 1 or answer[: headings[0].start()].strip():
+        return answer
+    return answer[headings[0].end():].lstrip("\n")
+
+
 def verify_and_clean_answer(
-    answer: str, context_verses: list[dict], verse_store: dict[str, dict]
+    answer: str,
+    context_verses: list[dict],
+    verse_store: dict[str, dict],
+    n_sub_questions: int | None = None,
+    query: str | None = None,
 ) -> tuple[str, list[str], int, int]:
     """Quote verification and post-processing shared by the single-verse and multi paths.
+    n_sub_questions == 1 also strips a lone leading '### 1. ...' heading.
+    With `query`, a premise from the question (a month, festival, observance) that no shown verse
+    contains is never left attached to a citation (retrieval/premise.py).
 
     Returns (answer, warnings, prose_citations_before, prose_citations_after).
     """
@@ -662,6 +736,12 @@ def verify_and_clean_answer(
     logger.info("PROSE_CITATIONS_COUNT_BEFORE: %d", prose_count_before)
 
     # Post-processing:
+    # 4b: False premise ('celibacy in the Karthik month'): no citation may carry a premise the verses lack
+    if query:
+        answer, premise_warnings = detach_premise_from_citations(answer, query, context_verses)
+        if premise_warnings:
+            logger.info("PREMISE_DETACHED: %d sentence(s) removed", len(premise_warnings))
+        warnings.extend(premise_warnings)
     # 5a: Rewrite meta phrases ('the supplied verses', 'the translations supplied', ...)
     answer = replace_supplied_phrases(answer)
     # 5b: Relabel unquoted prose citations
@@ -679,6 +759,8 @@ def verify_and_clean_answer(
 
     # 5d: Readers never see internal labels
     answer = strip_internal_labels(answer)
+    # 5e: A single-question answer carries no '### 1.' heading, whichever provider wrote it
+    answer = strip_single_section_heading(answer, n_sub_questions)
 
     leak = _META_LEFTOVER.search(answer)
     if leak:
@@ -687,8 +769,55 @@ def verify_and_clean_answer(
     return answer, warnings, prose_count_before, prose_count_after
 
 
+_CACHED_HEADERS = ("x-llm-model", "x-llm-provider", "x-llm-fallback")
+
+
 @app.post("/api/ask", response_model=AskResponse)
 def ask(req: AskRequest, request: Request, response: Response):
+    """Answer cache in front of _ask_uncached. Key: normalized question, multi, top_k, primary model and
+    reasoning effort. Answers from a fallback provider are not cached, so Groq can answer next time."""
+    # Small talk ("hi", "thanks", "who are you"): a fixed reply, no retrieval, no LLM call
+    small_talk = smalltalk.classify(req.query)
+    if small_talk:
+        logger.info("SMALLTALK: %s -> fixed reply (no retrieval, no LLM)", small_talk)
+        response.headers["X-VYOM-Route"] = smalltalk.ROUTE
+        return AskResponse(
+            query=req.query,
+            routed=smalltalk.ROUTE,
+            cited_verses=[],
+            answer=smalltalk.reply_for(small_talk),
+            sources=[],
+            sub_questions=[],
+            warnings=[],
+        )
+
+    effort = request.headers.get("X-Groq-Reasoning-Effort") or os.getenv("GROQ_REASONING_EFFORT") or ""
+    key = (normalize_question(req.query), bool(req.multi), req.top_k, primary_model(), effort.strip().lower())
+    hit = ANSWER_CACHE.get(key)
+    if hit is not None:
+        cached_resp, cached_headers = hit
+        logger.info("CACHE_HIT answer: multi=%s query=%r (no retrieval, no LLM call)", req.multi, req.query)
+        for k, v in cached_headers.items():
+            response.headers[k] = v
+        response.headers["X-VYOM-Cache"] = "HIT"
+        return cached_resp.model_copy(deep=True, update={"query": req.query})
+
+    result = _ask_uncached(req, request, response)
+    response.headers["X-VYOM-Cache"] = "MISS"
+    if result.routed != "crisis":
+        provider = get_last_provider()
+        if provider:
+            response.headers["X-LLM-Provider"] = provider
+        if get_last_fallback_used():
+            logger.info("CACHE_SKIP answer: fallback provider %s answered", provider)
+            return result
+    headers = {k: v for k, v in response.headers.items() if k.lower() in _CACHED_HEADERS}
+    ANSWER_CACHE.put(key, (result.model_copy(deep=True), headers))
+    logger.info("CACHE_STORE answer: multi=%s query=%r", req.multi, req.query)
+    return result
+
+
+def _ask_uncached(req: AskRequest, request: Request, response: Response) -> AskResponse:
     """Endpoint to answer questions grounded in Bhagavad Gita verses:
     1. Check regex router for explicit verse references.
     2. If not routed, run dense search (or multi-query retrieval if req.multi is True).
@@ -775,7 +904,9 @@ def ask(req: AskRequest, request: Request, response: Response):
         routed_warnings: list[str] = []
         if get_last_finish_reason() == "length":
             routed_warnings.append("truncated")
-        answer, verify_warnings, _, _ = verify_and_clean_answer(answer, context_verses, verse_store)
+        answer, verify_warnings, _, _ = verify_and_clean_answer(
+            answer, context_verses, verse_store, n_sub_questions=1, query=req.query
+        )
         routed_warnings.extend(verify_warnings)
 
         return AskResponse(
@@ -790,7 +921,7 @@ def ask(req: AskRequest, request: Request, response: Response):
 
     # Step 2: Non-routed queries
     routed = False
-    searcher: Searcher = getattr(request.app.state, "searcher", None)
+    searcher: Searcher = pick_searcher(request.app.state, req.query)
     if searcher is None:
         raise HTTPException(
             status_code=503,
@@ -903,6 +1034,8 @@ def ask(req: AskRequest, request: Request, response: Response):
         base_rec = dict(verse_store.get(vid, {"verse_id": vid}))
         base_rec["for_question"] = mv.get("for_question", [])
         base_rec["score"] = mv.get("score", 0.0)
+        if mv.get("theme_for"):
+            base_rec["theme_for"] = dict(mv["theme_for"])  # {sub-question index: rank in its boost list}
         if vid in forced["refs"] and vid not in forced["aliases"]:
             base_rec["requested"] = True
         if vid in forced["notes"]:
@@ -960,7 +1093,7 @@ def ask(req: AskRequest, request: Request, response: Response):
     # Stage 4: Verification & Resolution (shared with the single-verse path)
     t_verif_0 = time.perf_counter()
     answer, verify_warnings, prose_count_before, prose_count_after = verify_and_clean_answer(
-        answer, context_verses, verse_store
+        answer, context_verses, verse_store, n_sub_questions=len(sub_questions), query=req.query
     )
     warnings.extend(verify_warnings)
     t_verif = time.perf_counter() - t_verif_0

@@ -70,14 +70,14 @@ def test_build_rag_prompt_formatting():
 
 def test_generate_answer_gemini_success():
     """Verify generate_answer calls Gemini when GEMINI_API_KEY is available."""
-    with patch.dict(os.environ, {"GEMINI_API_KEY": "test-gemini-key"}, clear=True):
+    with patch.dict(os.environ, {"GEMINI_API_KEY": "test-gemini-key", "LLM_PROVIDERS": "gemini"}, clear=True):
         with patch(
             "llm.client._call_gemini", return_value="Gemini generated response"
         ) as mock_gemini:
             ans = generate_answer("Test question", "Test system prompt")
             assert ans == "Gemini generated response"
             mock_gemini.assert_called_once_with(
-                "Test question", "Test system prompt", "test-gemini-key"
+                "Test question", "Test system prompt", "test-gemini-key", temperature=0.2
             )
 
 
@@ -133,29 +133,26 @@ def test_generate_answer_fallback_to_ollama():
             mock_ollama.assert_called_once_with("Test question", "Test system prompt")
 
 
-def test_call_gemini_sdk():
-    """Verify _call_gemini configures genai and calls GenerativeModel."""
+def test_call_gemini_rest():
+    """_call_gemini posts to the REST generateContent endpoint with the key in a header (never the URL)."""
     with (
         patch.dict(os.environ, {}, clear=True),
-        patch("llm.client.genai.configure") as mock_conf,
-        patch("llm.client.genai.GenerativeModel") as mock_model_cls,
+        patch("llm.client.httpx.Client") as mock_cls,
     ):
-        mock_instance = MagicMock()
-        mock_response = MagicMock()
-        mock_response.text = "Gemini SDK output"
-        mock_instance.generate_content.return_value = mock_response
-        mock_model_cls.return_value = mock_instance
-
+        http = mock_cls.return_value.__enter__.return_value
+        http.post.return_value.json.return_value = {
+            "candidates": [{"content": {"parts": [{"text": "Gemini REST output"}]}, "finishReason": "STOP"}],
+            "usageMetadata": {"promptTokenCount": 12, "candidatesTokenCount": 3, "totalTokenCount": 15},
+        }
         res = _call_gemini("What is dharma?", "Be precise.", "fake-api-key")
-        assert res == "Gemini SDK output"
-        mock_conf.assert_called_once_with(api_key="fake-api-key")
-        mock_model_cls.assert_called_once_with(
-            model_name=GEMINI_MODEL, system_instruction="Be precise."
-        )
-        mock_instance.generate_content.assert_called_once_with(
-            "What is dharma?", request_options={"timeout": DEFAULT_TIMEOUT}
-        )
-
+    assert res == "Gemini REST output"
+    mock_cls.assert_called_once_with(timeout=DEFAULT_TIMEOUT)
+    url = http.post.call_args.args[0]
+    kwargs = http.post.call_args.kwargs
+    assert url.endswith(f"/models/{GEMINI_MODEL}:generateContent") and "fake-api-key" not in url
+    assert kwargs["headers"] == {"x-goog-api-key": "fake-api-key"}
+    assert kwargs["json"]["systemInstruction"] == {"parts": [{"text": "Be precise."}]}
+    assert kwargs["json"]["contents"][0]["parts"][0]["text"] == "What is dharma?"
 
 def test_call_groq_sdk():
     """Verify _call_groq initializes Groq client and calls chat.completions.create."""
@@ -177,7 +174,7 @@ def test_call_groq_sdk():
         res = _call_groq("What is yoga?", "Be wise.", "fake-groq-key")
         assert res == ("Groq SDK output", "openai/gpt-oss-120b", False)
         mock_groq_cls.assert_called_once_with(
-            api_key="fake-groq-key", timeout=DEFAULT_TIMEOUT
+            api_key="fake-groq-key", timeout=DEFAULT_TIMEOUT, max_retries=0
         )
         # Default model is gpt-oss-120b: low reasoning effort, reasoning text not returned
         mock_client.chat.completions.create.assert_called_once_with(
@@ -187,7 +184,7 @@ def test_call_groq_sdk():
                 {"role": "user", "content": "What is yoga?"},
             ],
             temperature=0.2,
-            max_tokens=1800,
+            max_tokens=1000,
             reasoning_effort="low",
             include_reasoning=False,
         )

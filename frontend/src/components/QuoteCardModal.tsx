@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Download, X, Sparkles, Copy, Check, Palette } from 'lucide-react';
 import type { GitaVerse } from '../data/gitaVerses';
+import { splitIastSpeaker, splitSanskritSpeaker } from '../utils/speaker';
 import confetti from 'canvas-confetti';
 import { useModalFocus } from '../utils/useModalFocus';
 
@@ -158,10 +159,18 @@ export const QuoteCardModal: React.FC<QuoteCardModalProps> = ({
     ctx.arc(w / 2, pad + 125, 4, 0, Math.PI * 2);
     ctx.fill();
 
-    // 5. Sanskrit Shloka in Devanagari
+    // 5. Sanskrit Shloka in Devanagari (speaker label, e.g. "अर्जुन उवाच", drawn small above it)
+    const sanskritParts = splitSanskritSpeaker(verse.sanskrit);
+    const iastParts = splitIastSpeaker(verse.transliteration);
+    if (sanskritParts.speaker) {
+      ctx.fillStyle = palettes.goldText;
+      ctx.font = '22px "Tiro Devanagari Sanskrit", serif';
+      ctx.fillText(sanskritParts.speaker, w / 2, 360);
+    }
     ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 36px "Tiro Devanagari Sanskrit", "Yatra One", serif';
-    const sanskritLines = verse.sanskrit.split('\n');
+    const sanskritText = sanskritParts.text.includes('\n') ? sanskritParts.text : sanskritParts.text.replace(/([।॥])\s*/gu, '$1\n');
+    const sanskritLines = sanskritText.trim().split('\n');
     let sanskritY = 410;
     sanskritLines.forEach((line) => {
       ctx.fillText(line.trim(), w / 2, sanskritY);
@@ -172,7 +181,7 @@ export const QuoteCardModal: React.FC<QuoteCardModalProps> = ({
     ctx.fillStyle = palettes.goldText;
     // Same IAST face as the Sacred Book; Cinzel has no lowercase and breaks diacritics
     ctx.font = 'italic 20px Georgia, "Times New Roman", serif';
-    const transLines = verse.transliteration.split('\n');
+    const transLines = (iastParts.speaker ? `${iastParts.speaker}\n${iastParts.text}` : iastParts.text).split('\n');
     let transY = sanskritY + 35;
     transLines.forEach((line) => {
       ctx.fillText(line.trim(), w / 2, transY);

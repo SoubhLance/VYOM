@@ -1,6 +1,6 @@
 import React from 'react';
 import { VyomLogo } from './VyomLogo';
-import { Volume2, VolumeX, Activity, Info, Headphones } from 'lucide-react';
+import { Volume2, VolumeX, Activity, Info, BookOpen } from 'lucide-react';
 
 interface NavbarProps {
   isBackendOnline: boolean;
@@ -29,9 +29,12 @@ export const Navbar: React.FC<NavbarProps> = ({
         <button
           onClick={onOpenBook}
           title="Open the Gita Sacred Book (All 701 Shlokas)"
-          className="flex items-center gap-2 rounded-xl border border-[#C5A059]/30 bg-white/70 px-3 py-2 text-xs font-semibold text-[#704B20] hover:border-[#A27427] hover:bg-[#FFFDF8] transition-colors"
+          aria-label="Open the Sacred Book"
+          className="flex items-center gap-1.5 rounded-xl border border-[#C5A059]/30 bg-white/70 px-2.5 py-2 text-xs font-semibold text-[#704B20] hover:border-[#A27427] hover:bg-[#FFFDF8] transition-colors sm:gap-2 sm:px-3"
         >
-          <Headphones className="h-4 w-4 text-[#E28743]" />
+          {/* A book icon and a visible label at every width: on phones the headphones icon alone read as audio */}
+          <BookOpen className="h-4 w-4 text-[#E28743]" aria-hidden="true" />
+          <span className="md:hidden">Book</span>
           <span className="hidden md:inline">Sacred Book</span>
         </button>
         <button onClick={onToggleAudio} aria-pressed={isAudioPlaying} title={isAudioPlaying ? 'Mute ambient music' : 'Play ambient music'} className={`flex items-center gap-2 rounded-xl border px-3 py-2 transition-colors ${isAudioPlaying ? 'border-[#A27427]/60 bg-[#F1E0BB] text-[#8C2D19]' : 'border-[#C5A059]/30 bg-white/70 text-[#704B20] hover:border-[#A27427]'}`}>

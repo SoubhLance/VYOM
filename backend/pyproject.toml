@@ -3,10 +3,26 @@ name = "vyom-ai"
 version = "0.1.0"
 description = "Multilingual Bhagavad Gita retrieval and knowledge system"
 requires-python = ">=3.11"
-dependencies = []
+# Lower bounds = the versions tested on 2026-11-19. Exact pins (and the CPU-only torch index) live in
+# requirements.txt, because pyproject.toml cannot carry pip's --extra-index-url.
+dependencies = [
+    "fastapi>=0.162.0",
+    "starlette>=1.10.0",
+    "pydantic>=2.14.1",
+    "uvicorn>=0.54.0",
+    "python-dotenv>=1.2.4",
+    "groq>=1.7.0",
+    "httpx>=0.28.1",
+    "qdrant-client>=1.19.1",
+    "sentence-transformers>=6.1.0",
+    "transformers>=5.20.2",
+    "torch>=2.14.1",
+    "numpy>=2.5.4",
+    "rank-bm25>=0.2.2",
+]
 
 [project.optional-dependencies]
-dev = ["pytest", "ruff"]
+dev = ["pytest>=9.1.1", "ruff"]
 
 [tool.ruff]
 line-length = 88

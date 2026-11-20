@@ -182,8 +182,10 @@ def test_replace_supplied_phrases_both_word_orders(text, expected):
 
 def test_prompts_carry_brevity_and_no_meta_rules():
     user_v2 = build_rag_prompt_v2("q", ["q"], [])
-    for text in (SYSTEM_PROMPT_V2, user_v2):
-        assert "about 250 words, split evenly across the sections" in text
+    assert "\nInstructions:\n" not in user_v2  # rules live once, in the system prompt
+    for text in (SYSTEM_PROMPT_V2,):
+        assert "about 200 words for a single question" in text
+        assert "about 120 words per section and 300 words at most in total" in text
         assert "### 1. <the sub-question>" in text
         assert "(paraphrase, BG x.y)" not in text
         assert "Never mention retrieval, search, context, sources" in text

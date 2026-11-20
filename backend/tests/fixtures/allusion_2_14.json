@@ -1,0 +1,14 @@
+{
+  "case": "Live test 2026-11-19: an interview-fear question got only BG 11.49 in context, yet the answer alluded to BG 2.14 (pleasure and pain are transient) without citing it.",
+  "query": "I am afraid before my job interview and anxious while waiting for the result. What does the Gita say?",
+  "shown_verses": ["11.49"],
+  "absent_verse": "2.14",
+  "forbidden_phrases": [
+    "pleasure and pain",
+    "heat and cold",
+    "come and go",
+    "transient",
+    "impermanent",
+    "not permanent"
+  ]
+}

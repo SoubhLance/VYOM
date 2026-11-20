@@ -15,6 +15,13 @@
     --ivory-muted: #6A5A48;
   }
 
+  /* Keyboard focus is always visible. Components that draw their own focus ring (focus-visible:ring-*,
+     with focus-visible:outline-none) override this; everything else gets a gold outline. */
+  :where(a, button, summary, select, input, textarea, [tabindex]:not([tabindex="-1"])):focus-visible {
+    outline: 2px solid #A27427;
+    outline-offset: 2px;
+  }
+
   body {
     background-color: #FAF6EB;
     color: #2C261F;
@@ -55,6 +62,35 @@
     70% { opacity: 0.9; transform: scale(0.96) rotate(2deg); }
   }
   @keyframes chat-sheet { from { transform: translateY(100%); } to { transform: none; } }
+}
+
+/* A newly arrived answer fades in block by block (owner-approved): each Markdown block rises in
+   over 360 ms, starting 50 ms after the previous one, capped so everything is in place by 600 ms.
+   Verse groups follow last. Restored history and reduced motion: no animation at all. */
+@media (prefers-reduced-motion: no-preference) {
+  .answer-reveal .md-root > *,
+  .answer-reveal .verse-group { animation: answer-reveal 360ms ease-out both; }
+  .answer-reveal .md-root > *:nth-child(2) { animation-delay: 50ms; }
+  .answer-reveal .md-root > *:nth-child(3) { animation-delay: 100ms; }
+  .answer-reveal .md-root > *:nth-child(4) { animation-delay: 150ms; }
+  .answer-reveal .md-root > *:nth-child(5) { animation-delay: 200ms; }
+  .answer-reveal .md-root > *:nth-child(n + 6),
+  .answer-reveal .verse-group { animation-delay: 240ms; }
+  @keyframes answer-reveal { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+}
+
+/* Verse card reached from a (BG x.y) chip: one soft gold glow, 1.2 s, never looping (owner-approved).
+   Reduced motion: no animation, just a plain outline for the same 1.2 s. */
+@media (prefers-reduced-motion: no-preference) {
+  .verse-highlight { animation: verse-glow 1200ms ease-out 1; }
+  @keyframes verse-glow {
+    0% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0); border-color: rgba(197, 160, 89, 0.3); }
+    25% { box-shadow: 0 0 0 4px rgba(197, 160, 89, 0.35); border-color: #C5A059; }
+    100% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0); border-color: rgba(197, 160, 89, 0.3); }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .verse-highlight { outline: 2px solid #C5A059; outline-offset: 2px; }
 }
 
 /* VYOM mark: the transparent logo used as a mask, filled with the current text colour */

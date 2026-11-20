@@ -129,9 +129,10 @@ def test_q6_style_answer_has_no_citations_after_cleanup(verse_store):
 # ---------------------------------------------------------------- 3. prompt rules
 
 
-def test_prompts_carry_new_rules_in_both_copies():
+def test_system_prompt_carries_new_rules():
     user_v2 = build_rag_prompt_v2("q", ["q"], [])
-    for text in (SYSTEM_PROMPT_V2, user_v2):
+    assert "\nInstructions:\n" not in user_v2  # rules live once, in the system prompt
+    for text in (SYSTEM_PROMPT_V2,):
         assert (
             "Never attach a citation to a sentence saying the text doesn't address something"
             in text

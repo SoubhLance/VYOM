@@ -1,5 +1,3 @@
-import { lookupVerse } from '../data/gitaVerses';
-
 export interface AskRequestPayload {
   query: string;
   top_k?: number;
@@ -28,10 +26,17 @@ export interface AskResponseData {
   routed: boolean | string;
   cited_verses: string[];
   answer: string;
-  isOfflineFallback?: boolean;
   sub_questions?: string[];
   warnings?: string[];
   sources?: Source[];
+}
+
+/** Debug details from the response headers (X-VYOM-Cache, X-LLM-Provider, X-LLM-Model, X-LLM-Fallback) */
+export interface AskMeta {
+  cache?: string;
+  provider?: string;
+  model?: string;
+  fallback?: boolean;
 }
 
 export interface HealthResponseData {
@@ -39,6 +44,28 @@ export interface HealthResponseData {
   searcher_ready?: boolean;
   valid_ids_count?: number;
 }
+
+/**
+ * Why a question failed. "aborted" = the user pressed Stop.
+ * busy: 429 / 503 (rate limit, every provider cooling down) · server: other 5xx or an unreadable body ·
+ * bad_request: other 4xx · timeout: no answer within ASK_TIMEOUT_MS ·
+ * network: the server could not be reached (fetch failed, or a proxy answered 502 / 504).
+ */
+export type AskErrorKind = 'aborted' | 'busy' | 'server' | 'bad_request' | 'timeout' | 'network';
+
+export class AskError extends Error {
+  readonly kind: AskErrorKind;
+  readonly status?: number;
+  constructor(kind: AskErrorKind, status?: number) {
+    super(status ? `${kind} (HTTP ${status})` : kind);
+    this.name = 'AskError';
+    this.kind = kind;
+    this.status = status;
+  }
+}
+
+/** Multi-question answers can take a while (several retrievals, one LLM call, quote verification) */
+const ASK_TIMEOUT_MS = 90000;
 
 /**
  * Check backend health status
@@ -64,128 +91,94 @@ export async function checkBackendHealth(): Promise<{ online: boolean; details?:
 }
 
 /**
- * Query the VYOM RAG endpoint
+ * Ask VYOM. Resolves with the answer and its debug headers; every failure rejects with an AskError.
+ * Never invents an answer: if the backend can't answer, the caller shows an error.
  */
-export async function askGitaQuestion(payload: AskRequestPayload): Promise<AskResponseData> {
-  const top_k = payload.top_k ?? 5;
-  const multi = payload.multi ?? true;
+export async function askGitaQuestion(
+  payload: AskRequestPayload,
+  options: { signal?: AbortSignal } = {},
+): Promise<{ data: AskResponseData; meta: AskMeta }> {
+  const { signal } = options;
+  if (signal?.aborted) throw new AskError('aborted');
+
+  // One controller for both the caller's Stop and our timeout, so we can tell which one fired
+  const controller = new AbortController();
+  let timedOut = false;
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, ASK_TIMEOUT_MS);
+  const onCallerAbort = () => controller.abort();
+  signal?.addEventListener('abort', onCallerAbort, { once: true });
 
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout for multi-query LLM synthesis
-
-    const res = await fetch('/api/ask', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ query: payload.query, top_k, multi }),
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-
-    // Map 429 (rate-limit) and 5xx (backend/provider error) to friendly guide message
-    if (res.status === 429 || res.status >= 500) {
-      throw new Error('The guide is busy, please try again in a minute');
+    let res: Response;
+    try {
+      res = await fetch('/api/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: payload.query, top_k: payload.top_k ?? 5, multi: payload.multi ?? true }),
+        signal: controller.signal,
+      });
+    } catch {
+      if (signal?.aborted) throw new AskError('aborted');
+      if (timedOut) throw new AskError('timeout');
+      throw new AskError('network');
     }
 
-    if (!res.ok) {
-      throw new Error(`HTTP_${res.status}`);
-    }
+    if (res.status === 429 || res.status === 503) throw new AskError('busy', res.status);
+    // 502 / 504 come from a proxy (Vite in dev) when the backend is down or unreachable
+    if (res.status === 502 || res.status === 504) throw new AskError('network', res.status);
+    if (res.status >= 500) throw new AskError('server', res.status);
+    if (!res.ok) throw new AskError('bad_request', res.status);
 
-    const data: AskResponseData = await res.json();
-    return {
-      ...data,
-      sub_questions: data.sub_questions ?? [],
-      warnings: data.warnings ?? [],
-      sources: data.sources ?? [],
+    let data: AskResponseData;
+    try {
+      data = (await res.json()) as AskResponseData;
+    } catch {
+      if (signal?.aborted) throw new AskError('aborted');
+      if (timedOut) throw new AskError('timeout');
+      throw new AskError('server', res.status);
+    }
+    if (typeof data?.answer !== 'string') throw new AskError('server', res.status);
+
+    const meta: AskMeta = {
+      cache: res.headers.get('X-VYOM-Cache') ?? undefined,
+      provider: res.headers.get('X-LLM-Provider') ?? undefined,
+      model: res.headers.get('X-LLM-Model') ?? undefined,
+      fallback: res.headers.get('X-LLM-Fallback') === 'true' || undefined,
     };
-  } catch (err: unknown) {
-    const errMessage = err instanceof Error ? err.message : String(err);
-
-    // Propagate 429 and 5xx to trigger the serene golden banner
-    if (errMessage === 'The guide is busy, please try again in a minute') {
-      throw err;
-    }
-
-    // If backend is unreachable (e.g. network failure), provide enlightened local fallback
-    console.warn('[VYOM] Backend offline or unreachable. Providing local grounded Gita synthesis.', errMessage);
-    return generateOfflineGitaWisdom(payload.query);
+    return {
+      data: {
+        ...data,
+        cited_verses: data.cited_verses ?? [],
+        sub_questions: data.sub_questions ?? [],
+        warnings: data.warnings ?? [],
+        sources: data.sources ?? [],
+      },
+      meta,
+    };
+  } finally {
+    clearTimeout(timeoutId);
+    signal?.removeEventListener('abort', onCallerAbort);
   }
 }
 
-/**
- * Local Grounded Synthesis Engine for when backend is offline
- */
-function generateOfflineGitaWisdom(query: string): AskResponseData {
-  const lower = query.toLowerCase();
-
-  // 1. Direct Verse routing check
-  const verseMatch = query.match(/(?:bg|gita|verse)?\s*([1-9]|1[0-8])\s*[.:]\s*([1-9]|[1-6][0-9]|7[0-8])/i);
-  if (verseMatch) {
-    const vid = `${parseInt(verseMatch[1], 10)}.${parseInt(verseMatch[2], 10)}`;
-    const found = lookupVerse(vid);
-    if (found) {
-      return {
-        query,
-        routed: true,
-        cited_verses: [found.verse_id],
-        answer: `### Sacred Discourse on Verse ${found.verse_id}\n\n**Sanskrit Shloka:**\n> ${found.sanskrit.replace(/\n/g, '  \n> ')}\n\n**Transliteration:**\n*${found.transliteration.replace(/\n/g, '  \n* ')}*\n\n**Word-by-Word Essence:**\n${found.word_meanings}\n\n**Translation (${found.author}):**\n"${found.translation}"\n\n**Philosophical Exposition:**\n${found.commentary_summary}\n\n*In the Kurukshetra of your daily life, apply this principle by detaching from ephemeral anxieties and anchoring your consciousness in steadfast devotion.*`,
-        isOfflineFallback: true,
-      };
-    }
+/** What the conversation shows for each failure. Plain words, no answer-shaped content. */
+export function askErrorText(kind: AskErrorKind, status?: number): string {
+  switch (kind) {
+    case 'aborted':
+      return 'Stopped. Nothing was answered.';
+    case 'busy':
+      return 'VYOM is catching its breath — try again in a few seconds.';
+    case 'timeout':
+      return 'VYOM took too long to answer. Please try again.';
+    case 'network':
+      return 'VYOM’s server can’t be reached right now. Please try again in a moment.';
+    case 'bad_request':
+      return `VYOM couldn’t read that question${status ? ` (error ${status})` : ''}. Try rephrasing it.`;
+    case 'server':
+    default:
+      return `Something went wrong on VYOM’s side${status ? ` (error ${status})` : ''}. Please try again.`;
   }
-
-  // 2. Surrender / Sharanagati
-  if (lower.includes('surrender') || lower.includes('sharanagati') || lower.includes('refuge') || lower.includes('whom should i')) {
-    return {
-      query,
-      routed: false,
-      cited_verses: ['18.66', '9.22'],
-      answer: `In the Bhagavad Gita, Lord Sri Krishna reveals that the supreme sanctuary for an earnest soul is absolute surrender (*Sharanagati*) to the Divine Supreme.\n\n### The Supreme Promise (Charama Shloka — BG 18.66)\n> *sarva-dharmān parityajya mām ekaṁ śharaṇaṁ vraja*\n> *ahaṁ tvāṁ sarva-pāpebhyo mokṣhayiṣhyāmi mā śhuchaḥ*\n\n*"Abandoning all duties and varieties of dharma, surrender unto Me alone. I will liberate you from all sins; grieve not."*\n\n### Key Teachings on Surrender:\n1. **Relinquishing the Illusion of Agency**: True surrender is not helplessness, but realizing that the individual ego (*Ahamkara*) is not the solitary master of destiny.\n2. **The Guarantee of Divine Care (BG 9.22)**: Krishna declares *Yoga-kshemam vahamy aham*—He Personally protects what the surrendered devotee possesses and grants what they lack.\n3. **Practical Application**: Surrender every action as an offering (*Yajna*), accepting favorable and unfavorable conditions with serene equanimity.`,
-      isOfflineFallback: true,
-    };
-  }
-
-  // 3. Karma Yoga / Duty / 2.47
-  if (lower.includes('karma') || lower.includes('duty') || lower.includes('work') || lower.includes('action') || lower.includes('nishkama')) {
-    return {
-      query,
-      routed: false,
-      cited_verses: ['2.47'],
-      answer: `The Bhagavad Gita articulates the foundational doctrine of **Nishkama Karma** (action performed without self-centered clinging to fruits).\n\n### The Sacred Maxim (BG 2.47)\n> *karmaṇy-evādhikāras te mā phaleṣhu kadāchana*\n> *mā karma-phala-hetur bhūr mā te saṅgo 'stvakarmaṇi*\n\n*"You have a right only to work, but never to its fruits. Let not the fruit of action be your motive, nor let your attachment be to inaction."*\n\n### Guiding Pillars:\n- **Full Presence in Execution**: Pour 100% of your energy, devotion, and cognitive presence into your prescribed duty.\n- **Equanimity in Outcome**: Success and failure are cosmic variables governed by multiple forces (*Kala*, *Karma*, *Prakriti*). Clinging to results produces debilitating anxiety.\n- **Immunity from Lethargy**: Krishna sternly warns against *akarma* (inertia or fatalistic surrender to laziness).`,
-      isOfflineFallback: true,
-    };
-  }
-
-  // 4. Fear / Death / Immortality / 2.20
-  if (lower.includes('fear') || lower.includes('death') || lower.includes('soul') || lower.includes('atman') || lower.includes('failure')) {
-    return {
-      query,
-      routed: false,
-      cited_verses: ['2.20', '18.78'],
-      answer: `Lord Krishna addresses Arjuna's paralyzing grief and fear by dismantling the false identification with the mortal physical shell.\n\n### Eternal Reality of the Self (BG 2.20)\n> *na jāyate mriyate vā kadāchin*\n> *nāyaṁ bhūtvā bhavitā vā na bhūyaḥ*\n> *ajo nityaḥ śhāśhvato 'yaṁ purāṇo na hanyate hanyamāne śharīre*\n\n*"The Atman is neither born nor does it ever die. It is unborn, eternal, everlasting and primeval; it is not destroyed when the physical body is destroyed."*\n\n### Overcoming Fear:\n- Fear is born of the illusion of separation and loss (*Moha*).\n- When you recognize yourself as the deathless Witness (*Sakshi*), external challenges cease to threaten your inherent core.\n- Stand upright with courageous resolve like Partha (*dhanur-dharaḥ*), confident that moral righteousness and divine grace guarantee inner victory.`,
-      isOfflineFallback: true,
-    };
-  }
-
-  // 5. Mind control / 6.5 / 6.35
-  if (lower.includes('mind') || lower.includes('focus') || lower.includes('distraction') || lower.includes('meditation') || lower.includes('control')) {
-    return {
-      query,
-      routed: false,
-      cited_verses: ['6.5', '6.35'],
-      answer: `When Arjuna laments that the mind is as turbulent as the raging gale wind (*vāyor iva su-duṣhkaram*), Krishna offers practical, non-dogmatic psychological discipline.\n\n### Self-Elevation (BG 6.5)\n*"Let a man lift himself by his own Self, let him not depress himself; for this Self alone is the friend of oneself, and this Self alone is the enemy of oneself."*\n\n### The Twofold Remedy (BG 6.35)\n> *abhyāsena tu kaunteya vairāgyeṇa cha gṛihyate*\n\n1. **Abhyasa (Persistent Practice)**: Gently and consistently redirecting the drifting mind back to its center without frustration.\n2. **Vairagya (Dispassionate Detachment)**: Discerning the transient nature of sensory cravings and mental agitation, refusing to feed reactionary thoughts.`,
-      isOfflineFallback: true,
-    };
-  }
-
-  // General Synthesis Default
-  return {
-    query,
-    routed: false,
-    cited_verses: ['2.47', '18.66'],
-    answer: `In response to your inquiry regarding *"${query}"*, the wisdom of the Bhagavad Gita invites you to harmonize duty (*Dharma*), unwavering discernment (*Buddhi Yoga*), and loving devotion (*Bhakti*).\n\nWhen we offer each moment with reverence without attachment to personal gain (as enunciated in **BG 2.47**), the turbulence of the heart subsides. Surrendering outcomes to the Supreme Divine (**BG 18.66**) transforms life's battlefield into a sacred pathway of self-realization.`,
-    isOfflineFallback: true,
-  };
 }

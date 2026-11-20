@@ -12,7 +12,11 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from llm.client import generate_answer
+from llm.cache import SPLITTER_CACHE, normalize_question, primary_model
 from retrieval.topic_boost import boost_verses
+
+# With 2+ sub-questions each hand-curated concept adds at most this many verses (token budget).
+MULTI_SUBQ_CONCEPT_CAP = 3
 from retrieval.router import parse_verse_refs
 
 logger = logging.getLogger("vyom.retrieval.multi")
@@ -227,6 +231,12 @@ def decompose(query: str) -> list[str]:
     if clean_query in _DECOMPOSE_CACHE:
         return list(_DECOMPOSE_CACHE[clean_query])
 
+    split_key = (normalize_question(clean_query), primary_model())
+    cached_split = SPLITTER_CACHE.get(split_key)
+    if cached_split is not None:
+        logger.info("CACHE_HIT splitter: %d sub-questions, no LLM call", len(cached_split))
+        return list(cached_split)
+
     words = clean_query.split()
     if len(words) < 8:
         return [clean_query]
@@ -251,7 +261,8 @@ def decompose(query: str) -> list[str]:
             sub_qs = [str(item).strip() for item in parsed if str(item).strip()]
             if sub_qs:
                 result = sub_qs[:4]
-                _DECOMPOSE_CACHE[clean_query] = result
+                SPLITTER_CACHE.put(split_key, list(result))
+                logger.info("CACHE_STORE splitter: %d sub-questions", len(result))
                 return result
     except Exception as e:
         logger.warning("Failed to decompose query (%s): %s", clean_query, e)
@@ -361,9 +372,10 @@ def retrieve_multi(
                     rc_hits.append({"verse_id": vid, "score": score})
 
         # Boosted verses for this sub-question (canonical verses for contested topics)
-        boosted_vids = boost_verses(sq)
+        concept_cap = MULTI_SUBQ_CONCEPT_CAP if len(sub_questions) >= 2 else None
+        boosted_vids = boost_verses(sq, concept_cap=concept_cap)
         if not boosted_vids and rc:
-            boosted_vids = boost_verses(rc)
+            boosted_vids = boost_verses(rc, concept_cap=concept_cap)
 
         if boosted_vids:
             all_scores = [h["score"] for h in sq_hits + rc_hits]
@@ -382,6 +394,10 @@ def retrieve_multi(
                         merged[b_vid]["for_question"].append(idx)
                     if b_score > merged[b_vid]["score"]:
                         merged[b_vid]["score"] = b_score
+                # Theme verse: the prompt lists it first for this sub-question and marks it (prompt_v2)
+                theme_for = merged[b_vid].setdefault("theme_for", {})
+                if idx not in theme_for:
+                    theme_for[idx] = b_idx
 
                 existing_sq_vids = {h["verse_id"] for h in sq_hits}
                 if b_vid not in existing_sq_vids:
@@ -391,10 +407,15 @@ def retrieve_multi(
         rc_hits.sort(key=lambda x: -x["score"])
 
         # Guarantee top 2 verses for this sub-question:
-        # Top hit from sq, and top distinct from rc if score >= 0.5; otherwise fill from sq/rc
+        # Top hit from sq, and top distinct from rc if score >= 0.5; otherwise fill from sq/rc.
+        # A boosted sub-question keeps its first boosted verse among the two: boosted verses score just
+        # below the best hit, so in a multi-part question the other sub-questions' higher scores could
+        # otherwise take every fill slot (a celibacy part lost all its celibacy verses, 2026-11-19).
         picks: list[str] = []
         if sq_hits:
             picks.append(sq_hits[0]["verse_id"])
+        if boosted_vids and boosted_vids[0] not in picks:
+            picks.append(boosted_vids[0])
         if rc_hits:
             for r in rc_hits:
                 if r["verse_id"] not in picks and r["score"] >= 0.5:
@@ -455,6 +476,15 @@ def retrieve_multi(
     forced_list = [merged[vid] for vid in forced_ids]
     guaranteed_list = [merged[vid] for vid in guaranteed_vids if vid in merged]
     remaining = [v for vid, v in merged.items() if vid not in guaranteed_vids and vid not in forced_ids]
+    # A sub-question that has theme verses (topic_boost) is not topped up with more semantic matches:
+    # it keeps its guaranteed best hit, and its theme verses fill the rest. This keeps the prompt near
+    # ~2.8K tokens (Groq 8K TPM) and keeps loosely related matches from crowding out the theme verses.
+    themed_sqs = {idx for v in merged.values() for idx in (v.get("theme_for") or {})}
+    if themed_sqs:
+        remaining = [
+            v for v in remaining
+            if v.get("theme_for") or not set(v.get("for_question") or []) <= themed_sqs
+        ]
     remaining.sort(key=lambda x: -x["score"])
 
     slots_left = max(0, cap - len(guaranteed_list) - len(forced_list))

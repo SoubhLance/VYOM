@@ -8,6 +8,11 @@ Enforces retrieval of canonical and balanced scriptural sources for topics such 
 
 import re
 
+from retrieval.concepts import CONCEPTS, match_concepts
+
+# At most this many life-theme + concept verses per sub-question (token budget: Groq 8K TPM)
+MAX_THEME_BOOSTS = 6
+
 TOPIC_VERSES = {
     "food_meat": [
         "9.26",
@@ -56,6 +61,8 @@ TOPIC_VERSES = {
         "6.14",
         "8.11",
         "17.14",
+        "2.59",
+        "2.60",
     ],
     "hell": [
         "16.21",
@@ -63,12 +70,16 @@ TOPIC_VERSES = {
         "1.44",
         "1.42",
     ],
-    "failure": [
-        "2.47",
-        "2.48",
-        "2.38",
-        "4.22",
-    ],
+    # Life themes (owner-approved 2026-11-19; each verse's translation checked). They replace the
+    # old "failure" topic (2.47, 2.48, 2.38, 4.22), whose keywords now map to "results".
+    "results": ["2.47", "2.48", "2.38", "2.14", "18.66"],
+    "fear": ["2.56", "2.40", "12.15", "16.1", "6.5"],
+    "guilt": ["4.36", "9.30", "9.31", "18.66", "6.5"],
+    "desire": ["3.37", "3.39", "3.43", "2.62", "5.23"],
+    "grief": ["2.11", "2.27", "2.20", "2.13", "18.66"],
+    "anger": ["2.62", "2.63", "5.23", "5.26", "16.21"],
+    "confusion": ["4.42", "18.63", "4.16", "2.7", "18.73"],
+    "duty": ["3.35", "18.47", "3.19", "3.8"],
     "heaven": [
         "9.20",
         "9.21",
@@ -79,6 +90,10 @@ TOPIC_VERSES = {
         "16.2",
     ],
 }
+
+# Everyday-struggle themes: capped like concepts when a question has 2+ sub-questions (celibacy too,
+# since its list grew to 5); the contested topics above them are never cut
+LIFE_THEMES = {"results", "fear", "guilt", "desire", "grief", "anger", "confusion", "duty", "celibacy"}
 
 # Topics whose keywords must not match a negated form ('non-violence', 'non violence');
 # 'nonviolence' is already excluded by the whole-word match
@@ -133,19 +148,38 @@ TOPIC_KEYWORDS = {
         "celibate",
         "brahmacharya",
         "brahmachari",
+        # common misspellings seen in live questions ("celabacy")
+        "celabacy",
+        "celebacy",
+        "celibasy",
     ],
     "hell": [
         "hell",
         "naraka",
     ],
-    "failure": [
-        "failure",
-        "failed",
-        "fail",
-        "fruit of action",
-        "fruits of action",
-        "results of action",
+    "results": [
+        "result", "results", "outcome", "outcomes", "waiting", "success", "successful",
+        "failure", "failed", "fail", "fruit of action", "fruits of action", "results of action",
     ],
+    "fear": [
+        "fear", "fears", "feared", "fearful", "fearing", "fearning", "afraid", "scared", "anxiety", "anxious",
+        "nervous", "tense", "tensed", "tension", "worry", "worried", "worrying", "panic", "stress", "stressed",
+    ],
+    "guilt": [
+        "guilt", "guilty", "sin", "sins", "sinful", "sinner", "shame", "ashamed", "regret", "regrets", "remorse",
+    ],
+    "desire": [
+        "desire", "desires", "lust", "lustful", "urge", "urges", "urging", "craving", "cravings",
+        "temptation", "tempted", "addiction", "addicted", "masturbation", "masturbate",
+    ],
+    "grief": [
+        "grief", "grieve", "grieving", "sorrow", "loss", "mourning", "bereavement", "passed away",
+    ],
+    "anger": ["anger", "angry", "rage", "furious", "resentment"],
+    "confusion": [
+        "confused", "confusion", "doubt", "doubts", "dilemma", "what to do", "what should i do", "torn between",
+    ],
+    "duty": ["duty", "duties", "purpose", "svadharma", "swadharma"],
     "heaven": [
         "heaven",
         "heavens",
@@ -162,8 +196,14 @@ TOPIC_KEYWORDS = {
 }
 
 
-def boost_verses(query_or_subquestion: str) -> list[str]:
-    """Return list of boosted verse_ids for a query or sub-question based on whole-word keyword matching."""
+def boost_verses(query_or_subquestion: str, concept_cap: int | None = None) -> list[str]:
+    """Return list of boosted verse_ids for a query or sub-question based on whole-word keyword matching.
+
+    Contested-topic lists (TOPIC_VERSES) come first and are never cut. Life themes (LIFE_THEMES) and
+    the hand-curated concept router (retrieval/concepts.py) are each cut to `concept_cap` when given
+    (multi.py passes 3 when a question has 2+ sub-questions), then share MAX_THEME_BOOSTS slots,
+    round-robin, so each one that fires keeps at least its first verse.
+    """
     text = query_or_subquestion.strip()
     if not text:
         return []
@@ -182,10 +222,34 @@ def boost_verses(query_or_subquestion: str) -> list[str]:
 
     boosted: list[str] = []
     seen: set[str] = set()
+    # Contested topics first, never cut (both sides must stay in context)
     for topic in matched_topics:
+        if topic in LIFE_THEMES:
+            continue
         for vid in TOPIC_VERSES.get(topic, []):
             if vid not in seen:
                 seen.add(vid)
                 boosted.append(vid)
+
+    # Life themes and concepts share MAX_THEME_BOOSTS slots, taken round-robin so every theme or
+    # concept that fired keeps its first verse before any keeps its second
+    groups: list[list[str]] = []
+    for topic in matched_topics:
+        if topic in LIFE_THEMES:
+            vids = TOPIC_VERSES.get(topic, [])
+            groups.append(vids if concept_cap is None else vids[:concept_cap])
+    for name in match_concepts(text):
+        vids = CONCEPTS[name]["verses"]
+        groups.append(vids if concept_cap is None else vids[:concept_cap])
+
+    taken = 0
+    for rank in range(max((len(g) for g in groups), default=0)):
+        for g in groups:
+            if taken >= MAX_THEME_BOOSTS:
+                return boosted
+            if rank < len(g) and g[rank] not in seen:
+                seen.add(g[rank])
+                boosted.append(g[rank])
+                taken += 1
 
     return boosted

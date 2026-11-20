@@ -5,6 +5,8 @@ import { Info, Pause, Play, Volume2 } from 'lucide-react';
 
 interface ClipPlayerProps {
   clips?: Clip[];
+  /** One small row (play button + duration), without the spoken lines: for verse cards that already show the text */
+  compact?: boolean;
 }
 
 const formatTime = (seconds: number) => {
@@ -16,7 +18,7 @@ const formatTime = (seconds: number) => {
  * Recitation player for a verse: one "Play verse" button (Sacred Book style).
  * Partial clips play one after another. All playback goes through audioCoordinator.
  */
-export const ClipPlayer: React.FC<ClipPlayerProps> = ({ clips }) => {
+export const ClipPlayer: React.FC<ClipPlayerProps> = ({ clips, compact = false }) => {
   const audioRefs = useRef<(HTMLAudioElement | null)[]>([]);
   const [playingIdx, setPlayingIdx] = useState<number | null>(null);
   const [durations, setDurations] = useState<number[]>([]);
@@ -61,6 +63,67 @@ export const ClipPlayer: React.FC<ClipPlayerProps> = ({ clips }) => {
     playFrom(0);
   };
 
+  const audioElements = clips.map((clip, idx) => (
+    <audio
+      key={clip.clip_id || idx}
+      ref={(el) => {
+        audioRefs.current[idx] = el;
+      }}
+      src={clip.audio_url}
+      preload="metadata"
+      className="hidden"
+      onLoadedMetadata={(e) => {
+        const d = e.currentTarget.duration;
+        setDurations((prev) => {
+          const next = [...prev];
+          next[idx] = d;
+          return next;
+        });
+      }}
+      onPlay={(e) => {
+        setPlayingIdx(idx);
+        onClipPlayStart(e.currentTarget);
+      }}
+      onPause={(e) => {
+        setPlayingIdx((cur) => (cur === idx ? null : cur));
+        onClipPlayEndOrPause(e.currentTarget);
+      }}
+      onEnded={(e) => {
+        onClipPlayEndOrPause(e.currentTarget);
+        if (idx + 1 < clips.length) {
+          playFrom(idx + 1);
+        } else {
+          setPlayingIdx(null);
+        }
+      }}
+      onError={(e) => {
+        setPlayingIdx((cur) => (cur === idx ? null : cur));
+        onClipPlayEndOrPause(e.currentTarget);
+      }}
+    />
+  ));
+
+  if (compact) {
+    return (
+      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 pt-1">
+        <button
+          type="button"
+          onClick={handleToggle}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-[#8C2D19]/35 bg-[#FFFDF8] px-2.5 py-1 text-[11px] font-semibold text-[#8C2D19] transition-colors hover:bg-[#F4ECE1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]/60"
+          aria-label={isPlaying ? 'Pause recitation' : 'Play recitation'}
+        >
+          {isPlaying ? <Pause className="h-3.5 w-3.5" aria-hidden="true" /> : <Play className="h-3.5 w-3.5" aria-hidden="true" />}
+          {isPlaying ? 'Pause' : 'Recitation'}
+          {totalDuration !== null && <span className="font-normal text-[#6A5A48]">{formatTime(totalDuration)}</span>}
+        </button>
+        {hasPartial && (
+          <span className="text-[10px] italic text-[#A27427]">Shares lines with a neighbouring verse</span>
+        )}
+        {audioElements}
+      </div>
+    );
+  }
+
   return (
     <div className="mt-2 space-y-2 rounded-xl border border-[#C5A059]/30 bg-[#FAF6EB]/80 p-3 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -82,45 +145,7 @@ export const ClipPlayer: React.FC<ClipPlayerProps> = ({ clips }) => {
         </button>
       </div>
 
-      {clips.map((clip, idx) => (
-        <audio
-          key={clip.clip_id || idx}
-          ref={(el) => {
-            audioRefs.current[idx] = el;
-          }}
-          src={clip.audio_url}
-          preload="metadata"
-          className="hidden"
-          onLoadedMetadata={(e) => {
-            const d = e.currentTarget.duration;
-            setDurations((prev) => {
-              const next = [...prev];
-              next[idx] = d;
-              return next;
-            });
-          }}
-          onPlay={(e) => {
-            setPlayingIdx(idx);
-            onClipPlayStart(e.currentTarget);
-          }}
-          onPause={(e) => {
-            setPlayingIdx((cur) => (cur === idx ? null : cur));
-            onClipPlayEndOrPause(e.currentTarget);
-          }}
-          onEnded={(e) => {
-            onClipPlayEndOrPause(e.currentTarget);
-            if (idx + 1 < clips.length) {
-              playFrom(idx + 1);
-            } else {
-              setPlayingIdx(null);
-            }
-          }}
-          onError={(e) => {
-            setPlayingIdx((cur) => (cur === idx ? null : cur));
-            onClipPlayEndOrPause(e.currentTarget);
-          }}
-        />
-      ))}
+      {audioElements}
 
       {/* Spoken lines in Devanagari, per clip */}
       {clips.map((clip, idx) =>

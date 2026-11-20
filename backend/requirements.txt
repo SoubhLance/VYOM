@@ -1,0 +1,29 @@
+# VYOM backend: pinned from the working environment (Python 3.12.0) on 2026-11-19.
+# Only packages the backend code and tests import, plus uvicorn to serve it and torch for
+# sentence-transformers. Install from the repo root:
+#   python -m pip install -r backend/requirements.txt
+#
+# CPU-only PyTorch wheels (the embedders run on CPU; avoids multi-GB CUDA wheels on Linux).
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# API
+fastapi==0.162.0
+starlette==1.10.0
+pydantic==2.14.1
+uvicorn==0.54.0
+python-dotenv==1.2.4
+
+# LLM providers (Groq SDK; Gemini and Ollama are called over httpx)
+groq==1.7.0
+httpx==0.28.1
+
+# Retrieval and indexing
+qdrant-client==1.19.1
+sentence-transformers==6.1.0
+transformers==5.20.2
+torch==2.14.1
+numpy==2.5.4
+rank-bm25==0.2.2
+
+# Tests
+pytest==9.1.1

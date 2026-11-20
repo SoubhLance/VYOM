@@ -6,36 +6,38 @@ import { VerseDetailModal } from './components/VerseDetailModal';
 import { AboutModal } from './components/AboutModal';
 import { VyomGateway } from './components/VyomGateway';
 import { SacredAtmosphere } from './components/SacredAtmosphere';
+import type { VerseView } from './components/VerseDetailModal';
 
 // The reader carries the 701-verse directory (~380 kB), so it loads only when the book opens
 // canvas-confetti and the card renderer load only when someone opens a quote card
 const QuoteCardModal = lazy(() => import('./components/QuoteCardModal').then((m) => ({ default: m.QuoteCardModal })));
 const GitaBookReader = lazy(() => import('./components/GitaBookReader').then((m) => ({ default: m.GitaBookReader })));
 
-const WELCOME_MESSAGE: ChatMessage = {
-  id: 'welcome-1', sender: 'assistant',
-  text: '### Welcome, seeker\n\nBring a question about duty, relationships, fear, or the nature of the self. I will draw on the Bhagavad Gita and its traditional commentaries to help you reflect.\n\nBegin with a sacred inquiry below, or share what is on your mind.',
-  citedVerses: ['2.47', '18.66'], chipsLabel: 'Begin with', timestamp: 'Welcome',
-};
-
-// The conversation survives a refresh (this browser only); "New conversation" clears it
+// The conversation survives a refresh (this browser only); "New conversation" clears it.
+// An empty conversation shows the start screen (ChatPanel), not a stored welcome message.
 const HISTORY_KEY = 'vyom.chat.v1';
 const MAX_SAVED_MESSAGES = 60;
+/** Id of the old fake welcome answer; dropped from histories saved before 2026-11-19 */
+const LEGACY_WELCOME_ID = 'welcome-1';
 function loadHistory(): ChatMessage[] {
   try {
     const saved: unknown = JSON.parse(localStorage.getItem(HISTORY_KEY) ?? 'null');
-    if (Array.isArray(saved) && saved.length > 0) return saved as ChatMessage[];
+    if (Array.isArray(saved)) return (saved as ChatMessage[]).filter((m) => m?.id !== LEGACY_WELCOME_ID);
   } catch {
     /* storage blocked or corrupt: start fresh */
   }
-  return [WELCOME_MESSAGE];
+  return [];
 }
 
 const CURRENT_YEAR = new Date().getFullYear();
+let messageCounter = 0;
+const newMessageId = (prefix: string) => `${prefix}-${Date.now()}-${++messageCounter}`;
+const nowLabel = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 const GATEWAY_MIN_MS = 1200;
 const GATEWAY_MAX_MS = 3000;
-import { lookupVerse, type GitaVerse } from './data/gitaVerses';
-import { askGitaQuestion, checkBackendHealth } from './services/api';
+import type { GitaVerse } from './data/gitaVerses';
+import { loadVerse, normalizeVerseId } from './data/verseStore';
+import { askGitaQuestion, checkBackendHealth, AskError } from './services/api';
 import { onClipPlayStart, onClipPlayEndOrPause } from './services/audioCoordinator';
 import { BookOpen, Volume2, Sparkles, Headphones, Plus } from 'lucide-react';
 
@@ -58,14 +60,14 @@ export function App() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const transitionStarted = useRef(false);
   const sendInFlightRef = useRef(false);
-  const [activeVerse, setActiveVerse] = useState<GitaVerse | null>(null);
-  const [isVerseModalOpen, setIsVerseModalOpen] = useState(false);
+  const [verseView, setVerseView] = useState<VerseView | null>(null);
+  const verseRequestRef = useRef(0);
+  const askAbortRef = useRef<AbortController | null>(null);
   const [quoteVerse, setQuoteVerse] = useState<GitaVerse | null>(null);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [activeView, setActiveView] = useState<'chat' | 'book'>('chat');
   const [bookInitialVerse, setBookInitialVerse] = useState<string | null>(null);
-  const [errorBannerText, setErrorBannerText] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>(loadHistory);
 
@@ -84,8 +86,7 @@ export function App() {
     try { localStorage.setItem(HISTORY_KEY, JSON.stringify(messages.slice(-MAX_SAVED_MESSAGES))); } catch { /* storage full or blocked */ }
   }, [messages]);
   const startNewConversation = () => {
-    setMessages([WELCOME_MESSAGE]);
-    setErrorBannerText(null);
+    setMessages([]);
   };
 
   const beginTransition = useCallback(() => {
@@ -159,35 +160,59 @@ export function App() {
       });
     }
   };
-  const openVerse = (id: string) => { const verse = lookupVerse(id); if (verse) { setActiveVerse(verse); setIsVerseModalOpen(true); } };
+  // Verse modal for any of the 701 verses: opens at once in a loading state, then fills in
+  const openVerse = useCallback((ref: string) => {
+    const id = normalizeVerseId(ref);
+    if (!id) return;
+    const request = ++verseRequestRef.current;
+    setVerseView({ id, status: 'loading', verse: null });
+    loadVerse(id)
+      .then((verse) => { if (request === verseRequestRef.current) setVerseView(verse ? { id, status: 'ready', verse } : { id, status: 'error', verse: null }); })
+      .catch(() => { if (request === verseRequestRef.current) setVerseView({ id, status: 'error', verse: null }); });
+  }, []);
   const handleOpenQuoteCard = (verse: GitaVerse) => { setQuoteVerse(verse); setIsQuoteModalOpen(true); };
-  const handleSendMessage = async (queryText: string) => {
+  // From a chat chip: needs the verse text first; if it can't load, the verse modal shows the error and a retry
+  const openQuoteCardById = (ref: string) => {
+    loadVerse(ref).then((verse) => (verse ? handleOpenQuoteCard(verse) : openVerse(ref))).catch(() => openVerse(ref));
+  };
+  const stopAsking = () => askAbortRef.current?.abort();
+  /** Ask a question. With retryOfId, the failed reply is replaced and the question is not added again. */
+  const handleSendMessage = async (queryText: string, retryOfId?: string) => {
     // One request at a time: buttons disable on isLoading, but a double click can land before the re-render
     if (sendInFlightRef.current) return;
     sendInFlightRef.current = true;
-    setMessages((prev) => [...prev, { id: `user-${Date.now()}`, sender: 'user', text: queryText, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
-    setIsLoading(true); setErrorBannerText(null);
+    const controller = new AbortController();
+    askAbortRef.current = controller;
+    setMessages((prev) => (retryOfId
+      ? prev.filter((m) => m.id !== retryOfId)
+      : [...prev, { id: newMessageId('user'), sender: 'user', text: queryText, timestamp: nowLabel() }]));
+    setIsLoading(true);
     try {
-      const response = await askGitaQuestion({ query: queryText, top_k: 5 });
+      const { data, meta } = await askGitaQuestion({ query: queryText, top_k: 5 }, { signal: controller.signal });
       setMessages((prev) => [
         ...prev,
         {
-          id: `assistant-${Date.now()}`,
+          id: newMessageId('assistant'),
           sender: 'assistant',
-          text: response.answer,
-          citedVerses: response.cited_verses,
-          routed: response.routed,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          isOfflineFallback: response.isOfflineFallback,
-          subQuestions: response.sub_questions,
-          warnings: response.warnings,
-          sources: response.sources,
+          text: data.answer,
+          citedVerses: data.cited_verses,
+          routed: data.routed,
+          timestamp: nowLabel(),
+          subQuestions: data.sub_questions,
+          warnings: data.warnings,
+          sources: data.sources,
+          meta,
         },
       ]);
     } catch (err) {
-      setErrorBannerText(err instanceof Error ? err.message : 'The consultation service is temporarily unavailable.');
-      setMessages((prev) => [...prev, { id: `assistant-${Date.now()}`, sender: 'assistant', text: '### A moment for reflection\n\nWhile the consultation service reconnects, remember **BG 2.47**: focus on sincere action, without attachment to its results.', citedVerses: ['2.47'], timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), isOfflineFallback: true }]);
-    } finally { sendInFlightRef.current = false; setIsLoading(false); }
+      // An honest, answer-free note in the conversation, with Retry (see ChatPanel)
+      const error = err instanceof AskError ? err : new AskError('server');
+      setMessages((prev) => [...prev, { id: newMessageId('error'), sender: 'assistant', text: '', timestamp: nowLabel(), error: { kind: error.kind, status: error.status, query: queryText } }]);
+    } finally {
+      if (askAbortRef.current === controller) askAbortRef.current = null;
+      sendInFlightRef.current = false;
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -209,16 +234,16 @@ export function App() {
           </aside>
 
           <section className="flex min-w-0 flex-col gap-3">
-            <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-1"><div><p className="font-cinzel text-[10px] uppercase tracking-[0.2em] text-[#9A6B27]">A quiet place to reflect</p><h1 className="font-cinzel text-xl font-bold text-[#4B3825] sm:text-2xl">Ask the Eternal Charioteer</h1></div><div className="flex items-center gap-3"><p className="hidden font-sanskrit text-sm text-[#8C2D19] sm:block" lang="sa">श्रीमद्भगवद्गीतायाः प्रज्ञया परामर्शं प्राप्नुहि</p>{messages.length > 1 && <button onClick={startNewConversation} disabled={isLoading} className="inline-flex items-center gap-1.5 rounded-full border border-[#C5A059]/40 bg-[#FFFDF8] px-3 py-1.5 text-xs font-semibold text-[#704B20] transition hover:border-[#A27427] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]/50 disabled:opacity-50"><Plus className="h-3.5 w-3.5" />New conversation</button>}</div></header>
-            <section className="h-[calc(100dvh-10.5rem)] min-h-[480px] lg:h-[calc(100dvh-12rem)]" aria-label="Gita consultation"><ChatPanel messages={messages} isLoading={isLoading} onSendMessage={handleSendMessage} onOpenVerseDetail={(verse) => { setActiveVerse(verse); setIsVerseModalOpen(true); }} onOpenQuoteCard={handleOpenQuoteCard} errorBannerText={errorBannerText} onDismissError={() => setErrorBannerText(null)} /></section>
+            <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-1"><div><p className="font-cinzel text-[10px] uppercase tracking-[0.2em] text-[#9A6B27]">A quiet place to reflect</p><h1 className="font-cinzel text-xl font-bold text-[#4B3825] sm:text-2xl">Ask the Eternal Charioteer</h1></div><div className="flex items-center gap-3"><p className="hidden font-sanskrit text-sm text-[#8C2D19] sm:block" lang="sa">श्रीमद्भगवद्गीतायाः प्रज्ञया परामर्शं प्राप्नुहि</p>{messages.length > 0 && <button onClick={startNewConversation} disabled={isLoading} className="inline-flex items-center gap-1.5 rounded-full border border-[#C5A059]/40 bg-[#FFFDF8] px-3 py-1.5 text-xs font-semibold text-[#704B20] transition hover:border-[#A27427] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]/50 disabled:opacity-50"><Plus className="h-3.5 w-3.5" />New conversation</button>}</div></header>
+            <section className="h-[calc(100dvh-10.5rem)] min-h-[480px] lg:h-[calc(100dvh-12rem)]" aria-label="Gita consultation"><ChatPanel messages={messages} isLoading={isLoading} onSendMessage={handleSendMessage} onStop={stopAsking} onRetry={(messageId, query) => void handleSendMessage(query, messageId)} onOpenVerseDetail={openVerse} onOpenQuoteCard={openQuoteCardById} /></section>
           </section>
 
           <aside className="hidden xl:block" aria-label="Inspiration">
-            <div className="royal-card sticky top-24 rounded-2xl p-5"><InspirationPanel onSelectQuery={handleSendMessage} disabled={isLoading} /></div>
+            <div className="royal-card sticky top-24 rounded-2xl p-5"><InspirationPanel onSelectQuery={(query) => void handleSendMessage(query)} disabled={isLoading} /></div>
           </aside>
         </main>
         <footer className="relative z-10 border-t border-[#C5A059]/20 bg-[#FAF6EB]/75 py-3 text-center text-[11px] text-[#796A57]">© {CURRENT_YEAR} VYOM · Bhagavad Gita Multimodal Intelligence</footer>
-        <VerseDetailModal verse={activeVerse} isOpen={isVerseModalOpen} onClose={() => setIsVerseModalOpen(false)} onOpenQuoteCard={handleOpenQuoteCard} />
+        <VerseDetailModal view={verseView} onClose={() => setVerseView(null)} onRetry={openVerse} onOpenQuoteCard={handleOpenQuoteCard} />
         {isQuoteModalOpen && <Suspense fallback={null}><QuoteCardModal verse={quoteVerse} isOpen={isQuoteModalOpen} onClose={() => setIsQuoteModalOpen(false)} /></Suspense>}
         <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
         </>}

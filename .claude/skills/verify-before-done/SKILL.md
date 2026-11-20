@@ -3,7 +3,7 @@ name: verify-before-done
 description: Use before saying any VYOM task is finished, fixed or working.
 ---
 
-1. Backend, from the repo root in PowerShell: `.\venv\python.exe -m pytest backend/tests -q`. Baseline: 228 passed (172 + 24 in test_verse_refs.py + 32 in test_grounding_cleanup.py, 2026-11-12).
+1. Backend, from the repo root in PowerShell: `.\venv\python.exe -m pytest backend/tests -q`. Baseline: 330 passed (228 + 12 rate_limit_and_cache + 9 failover + 17 heading_and_corrections + 9 embed_model + 55 concepts, 2026-11-19).
 2. Frontend, in `frontend/`: `npm run build`, then `npm run lint`. Baseline: build OK (the >500 kB chunk warning is normal); lint 0 errors and 0 warnings (the 3 earlier warnings were fixed on 2026-11-12).
 3. If verse or clip data changed, run the sanskrit-data check script and compare with its baseline.
 4. Report the real counts from the output and how they differ from baseline. Never round them or assume.

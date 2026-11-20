@@ -54,6 +54,24 @@ const THEMES: Array<{ label: string; query: string }> = [
   { label: 'Decision Making in Dilemma', query: 'How should I make a difficult decision when I feel torn between duties?' },
 ];
 
+/** The sacred inquiries as compact chips, e.g. under VYOM's small-talk reply ("Try one of these:") */
+export const SuggestionChips: React.FC<{ onSelectQuery: (query: string) => void; disabled?: boolean }> = ({ onSelectQuery, disabled = false }) => (
+  <div className="mt-3 flex flex-wrap gap-2">
+    {SUGGESTIONS.map((item) => (
+      <button
+        key={item.label}
+        type="button"
+        disabled={disabled}
+        onClick={() => onSelectQuery(item.query)}
+        className="inline-flex items-center gap-1.5 rounded-full border border-[#C5A059]/40 bg-[#FFFDF8] px-3 py-1.5 text-xs font-semibold text-[#704B20] transition hover:border-[#A27427] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]/60 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {item.icon}
+        {item.label}
+      </button>
+    ))}
+  </div>
+);
+
 interface InspirationPanelProps {
   onSelectQuery: (query: string) => void;
   disabled?: boolean;

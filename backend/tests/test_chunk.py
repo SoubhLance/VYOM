@@ -4,6 +4,22 @@ from pathlib import Path
 import pytest
 
 from chunk import build_chunks, split_text, verse_embed_text
+from clean import ENGLISH_CORRECTIONS
+
+
+def _with_pending_english_corrections(saved: list[dict]) -> list[dict]:
+    """The saved chunks as they will look once ENGLISH_CORRECTIONS are regenerated into them.
+    A correction already present in chunks.jsonl changes nothing here."""
+    out = []
+    for c in saved:
+        c = dict(c)
+        for vid, _author, old, new in ENGLISH_CORRECTIONS:
+            if c.get("verse_id") == vid:
+                for key, value in c.items():
+                    if isinstance(value, str) and old in value:
+                        c[key] = value.replace(old, new)
+        out.append(c)
+    return out
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data" / "processed"
@@ -84,6 +100,8 @@ def test_chunking_deterministic(chunks):
     splits_2 = split_text(sample_text, max_chars=100, overlap=1)
     assert splits_1 == splits_2
 
-    # 2. Test build_chunks determinism against saved chunks
+    # 2. Test build_chunks determinism against saved chunks. English corrections added to clean.py but
+    #    not yet regenerated into chunks.jsonl (re-index pending, see CLAUDE.md) are applied to the saved
+    #    copy first, so everything else must still match byte for byte.
     _, freshly_built_chunks = build_chunks()
-    assert freshly_built_chunks == chunks
+    assert freshly_built_chunks == _with_pending_english_corrections(chunks)

@@ -121,7 +121,60 @@ def main() -> int:
     print(f"[CLIP] verses with partial (shared) clips: {len(partial)}")
     problems += bool(dir_bad) + bool(map_bad)
 
+    problems += check_ui(canon, verbose)
     return 1 if (strict and problems) else 0
+
+
+# What the UI actually shows (since 2026-11-19): verse text from frontend/public/verses/chNN.json,
+# generated from verses.jsonl by frontend/scripts/export_verses.py; shlokaDirectory only for audio.
+PUBLIC_VERSES = ROOT / "frontend/public/verses"
+FRONTEND_SRC = ROOT / "frontend/src"
+# Same patterns as frontend/src/utils/speaker.ts
+UI_SPEAKER_SA = re.compile(r"^\s*(श्री\s?भगवानुवाच|(?:अर्जुन|सञ्जय|संजय|धृतराष्ट्र)\s+उवाच)")
+UI_SPEAKER_IAST = re.compile(
+    r"^\s*((?:śhrī[\s-]?bhagavān|arjuna|sañjaya|dhṛitarāśhṭra|dhṛitarāśhtra)\s+uvācha)", re.I
+)
+# Reading verse text off a shlokaDirectory item (the reader's currentVerse, or SHLOKA_DIRECTORY directly)
+DIRECTORY_TEXT_READ = re.compile(
+    r"(currentVerse\??\.(sanskrit|transliteration)|SHLOKA_DIRECTORY[^;\n]*\.(sanskrit|transliteration))"
+)
+
+
+def check_ui(canon: dict, verbose: bool) -> int:
+    shown = {}
+    for path in sorted(PUBLIC_VERSES.glob("ch*.json")):
+        shown.update(json.load(open(path, encoding="utf-8")))
+    diff = sorted(
+        vid
+        for vid, r in canon.items()
+        if any(shown.get(vid, {}).get(f) != (r.get(f) or "") for f in ("sanskrit", "transliteration", "word_meanings"))
+    )
+    print(f"[UI] public/verses verses: {len(shown)}; differing from verses.jsonl: {len(diff)} {diff[:10]}")
+
+    readers = []
+    for path in FRONTEND_SRC.rglob("*.ts*"):
+        if path.suffix not in (".ts", ".tsx"):
+            continue
+        text = path.read_text(encoding="utf-8")
+        if "recitationIndex" in text or "shlokaDirectory" in text:
+            if DIRECTORY_TEXT_READ.search(text):
+                readers.append(str(path.relative_to(ROOT)))
+    print(f"[UI] components reading shlokaDirectory verse text: {len(readers)} {readers}")
+
+    sa_only, iast_only = [], []
+    for vid, r in canon.items():
+        sa = bool(UI_SPEAKER_SA.match(unicodedata.normalize("NFC", r["sanskrit"])))
+        ia = bool(UI_SPEAKER_IAST.match(unicodedata.normalize("NFC", r["transliteration"])))
+        if sa and not ia:
+            sa_only.append(vid)
+        elif ia and not sa:
+            iast_only.append(vid)
+    labelled = sum(bool(UI_SPEAKER_SA.match(unicodedata.normalize("NFC", r["sanskrit"]))) for r in canon.values())
+    print(
+        f"[UI] speaker labels shown: {labelled}; only in Sanskrit: {len(sa_only)} {sa_only}; "
+        f"only in IAST: {len(iast_only)} {iast_only}"
+    )
+    return bool(diff) + bool(readers)
 
 
 if __name__ == "__main__":

@@ -390,8 +390,17 @@ body:has(.gita-book-reader),
 .gita-sanskrit-content {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   padding: 0.25rem 2rem 1rem 1.6rem;
+}
+
+/* Centered with auto margins, not justify-content: center, so a verse taller than its page overflows
+   downward and stays scrollable instead of losing its first lines above the scroll area */
+.gita-sanskrit-content > :first-child {
+  margin-top: auto;
+}
+
+.gita-sanskrit-content > :last-child {
+  margin-bottom: auto;
 }
 
 .gita-speaker-label {
@@ -400,6 +409,27 @@ body:has(.gita-book-reader),
   font-size: 0.76rem;
   font-weight: 600;
   text-align: center;
+}
+
+/* IAST speaker label ("arjuna uvācha"), a small line above the transliteration */
+.gita-transliteration-speaker {
+  display: block;
+  margin-bottom: 0.2rem;
+  color: #704B20;
+  font-size: 0.74rem;
+}
+
+.gita-retry-link {
+  color: #8C2D19;
+  font-style: normal;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.gita-retry-link:focus-visible {
+  outline: 2px solid #C5A059;
+  outline-offset: 2px;
 }
 
 .gita-page-ornament {
@@ -819,38 +849,46 @@ body:has(.gita-book-reader),
 }
 
 @media (max-width: 767px) {
+  /* Phones: the desktop two-page spread turned on its side. The Sanskrit page sits on top and the
+     English page below, with a spine gap of the maroon cover between them. Both pages take their full
+     height and the folio scrolls as one, so a verse and its meaning read top to bottom with one swipe.
+     Prev / Play / Next stay in the bottom bar (GitaBookReader.tsx). */
   .gita-book-cover {
-    overflow: hidden;
-  }
-
-  .gita-book-spread {
-    flex-direction: column;
-    gap: 0;
+    overflow-x: hidden;
     overflow-y: auto;
-    padding: 8px;
-    perspective: none;
+    overscroll-behavior: contain;
     scrollbar-width: thin;
     scrollbar-color: #C5A059 rgba(197, 160, 89, 0.12);
   }
 
-  .gita-book-page {
-    flex: 0 0 auto;
-    overflow: visible;
-    background-image: linear-gradient(180deg, #fffdf6, #FAF6EB 42%, #f6eedf);
-    box-shadow: none;
+  .gita-book-spread {
+    flex-direction: column;
+    gap: 9px;
+    height: auto;
+    padding: 7px;
+    perspective: none;
   }
 
+  .gita-book-page {
+    flex: 0 0 auto;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  /* Page shading runs top-to-bottom towards the spine instead of left-to-right */
   .gita-book-left-page {
-    min-height: clamp(340px, 48dvh, 510px);
+    background-image: linear-gradient(180deg, transparent 0%, transparent 86%, rgba(0, 0, 0, 0.12) 100%), linear-gradient(180deg, #fffdf6 0%, #FAF6EB 46%, #f2e8d4 100%);
+    box-shadow: 0 -3px 0 -1px #e7dcc3, 0 6px 12px rgba(52, 33, 24, 0.15);
   }
 
   .gita-book-right-page {
-    min-height: 390px;
-    border-top: 1px solid rgba(197, 160, 89, 0.45);
+    background-image: linear-gradient(0deg, transparent 0%, transparent 86%, rgba(0, 0, 0, 0.12) 100%), linear-gradient(0deg, #fffdf6 0%, #FAF6EB 52%, #f2e8d4 100%);
+    box-shadow: 0 3px 0 -1px #e7dcc3, 0 -2px 10px rgba(52, 33, 24, 0.12);
   }
 
   .gita-page-scroll {
     flex: 0 0 auto;
+    min-height: auto;
     overflow: visible;
   }
 
@@ -860,20 +898,39 @@ body:has(.gita-book-reader),
   }
 
   .gita-sanskrit-content {
-    padding-inline: 0.65rem;
+    padding: 0.25rem 0.75rem 1.25rem;
+  }
+
+  .gita-page-ornament {
+    padding: 0.7rem 0 0.8rem;
   }
 
   .gita-sanskrit-lines {
-    font-size: clamp(1.44rem, 6.9vw, 1.9rem);
+    font-size: clamp(1.35rem, 6.2vw, 1.75rem);
     line-height: 1.75;
   }
 
+  .gita-transliteration {
+    font-size: 0.95rem;
+  }
+
+  /* The footer page number repeats the verse number already on the page */
   .gita-page-number {
-    padding-inline: 0.8rem;
+    display: none;
   }
 
   .gita-meaning-content {
-    padding: 1rem 0.8rem 1.1rem;
+    padding: 1rem 1rem 1.25rem;
+  }
+
+  .gita-translation {
+    font-size: 1.05rem;
+    line-height: 1.75;
+  }
+
+  /* Bottom bar: Prev / Play / Next, clear of the home indicator */
+  .gita-book-navigation {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
   }
 
   .gita-bookmark {
@@ -882,7 +939,7 @@ body:has(.gita-book-reader),
 
   .gita-page-turn {
     height: auto;
-    min-height: 100%;
+    min-height: 0;
     animation: none;
   }
 

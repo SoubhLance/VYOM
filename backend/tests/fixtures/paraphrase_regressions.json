@@ -1,0 +1,29 @@
+{
+  "note": "Paraphrase errors seen in live answers on 2026-11-19. Each case asks about one verse and lists wording the answer must not contain. Used by the opt-in live test in test_premise_and_wording.py (VYOM_LIVE_LLM=1). 'Garatri' is spelled that way in the dataset's own 10.35 translation, so it is not a forbidden word here. 2.28 was dropped: the translation the prompt shows (Adidevananda) itself says 'unknown beginning ... unknown end', so 'unknown' was faithful.",
+  "cases": [
+    {
+      "verse": "10.35",
+      "question": "What does Krishna say about months and seasons in BG 10.35?",
+      "forbidden": ["months i am spring", "among months, i am spring", "among seasons, i am margasheersha", "among seasons, i am mārgaśīrṣa"],
+      "error_seen": "merged 'Margasheersha among months' with 'spring among seasons'"
+    },
+    {
+      "verse": "8.24",
+      "question": "Explain BG 8.24.",
+      "forbidden": ["a ritual", "the ritual", "ritual of"],
+      "error_seen": "called the verse a ritual; it is about the time of departing the body"
+    },
+    {
+      "verse": "8.25",
+      "question": "Explain BG 8.25.",
+      "forbidden": ["a ritual", "the ritual", "ritual of"],
+      "error_seen": "called the verse a ritual"
+    },
+    {
+      "verse": "3.43",
+      "question": "Explain BG 3.43.",
+      "forbidden": ["path of selfless action", "selfless action"],
+      "error_seen": "added 'path of selfless action'. The translation shown (Adidevananda) says 'fixing the mind ... in Karma Yoga', so 'selfless' is the added part; owner to confirm this case."
+    }
+  ]
+}

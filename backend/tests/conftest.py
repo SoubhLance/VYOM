@@ -15,3 +15,18 @@ for path_entry in [
     p_str = str(path_entry)
     if p_str not in sys.path:
         sys.path.insert(0, p_str)
+
+
+import pytest  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _clear_llm_caches():
+    """The answer and splitter LRU caches are process-wide; start every test empty."""
+    from llm.cache import ANSWER_CACHE, SPLITTER_CACHE
+
+    ANSWER_CACHE.clear()
+    SPLITTER_CACHE.clear()
+    yield
+    ANSWER_CACHE.clear()
+    SPLITTER_CACHE.clear()

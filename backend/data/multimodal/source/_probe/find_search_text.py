@@ -1,3 +1,13 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:fa8048e1f3261374650e070e975640d18019fb6db5c76e3e8de380f2ad686cf2
-size 350
+import pathlib
+import re
+
+for p in pathlib.Path('backend').rglob('*.py'):
+  try:
+    content = p.read_text(encoding='utf-8')
+    if 'search_text' in content:
+      print(f'Found search_text in: {p}')
+    if 'normalize' in content.lower() and 'nasal' in content.lower():
+      print(f'Found nasal normalization in: {p}')
+  except Exception:
+    pass
+

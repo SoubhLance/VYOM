@@ -1,3 +1,21 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:78f0215a2423aa66264d7ba8ec32063e948457b0bc8c3c6ec55b1d1be13cba75
-size 541
+import numpy as np
+from PIL import Image
+import sys
+
+sys.stdout.reconfigure(encoding='utf-8')
+
+im = Image.open('backend/data/multimodal/source/_audit/frames/ch06/slide025.png').convert('L')
+arr = np.array(im)
+logo = np.zeros_like(arr, dtype=bool)
+logo[:65, 540:] = True
+mask = (arr < 160) & (~logo)
+mask[215:, :] = False
+proj = mask.sum(axis=1)
+
+print("Ch 6 Slide 25 row projection:")
+for y in range(40, 180):
+    if proj[y] > 0:
+        print(f"y={y:3d} ({proj[y]:3d}): {'#' * (proj[y] // 10)}")
+    else:
+        print(f"y={y:3d} (  0)")
+

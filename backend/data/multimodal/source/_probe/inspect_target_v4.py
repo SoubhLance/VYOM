@@ -1,3 +1,16 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:5ddd6aacdf79bb2688827184a8fe3d8ce33900dde77bf441552d54ff0f3ecaaf
-size 345
+import json
+import sys
+
+sys.stdout.reconfigure(encoding='utf-8')
+
+with open(
+    'backend/data/multimodal/source/vyom_clips_v4.json', encoding='utf-8'
+) as f:
+  v4 = json.load(f)
+
+v4_by_id = {c['clip_id']: c for c in v4}
+
+for t in ['bg_01_21', 'bg_01_22']:
+  print(f'=== {t} ===')
+  print(json.dumps(v4_by_id[t], ensure_ascii=False, indent=2))
+

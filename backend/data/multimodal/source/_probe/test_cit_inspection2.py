@@ -1,3 +1,11 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:d3096ab8d8014e00fa72e270828d6bf135b7c622939209e2442f7401ae45fda8
-size 277
+import re
+import sys
+
+sys.stdout.reconfigure(encoding="utf-8")
+
+with open("backend/data/multimodal/source/_probe/test_cit_inspection.py", "r", encoding="utf-8") as f:
+    code = f.read()
+
+# Replace header
+code = "import sys\nsys.stdout.reconfigure(encoding='utf-8')\n" + code
+

@@ -1,3 +1,318 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:79190a5188e1cbffa81b5d13cbc9c95b0a956f2b8f4fe6c92adf1d4b6494460f
-size 18246
+[
+  {
+    "id": 1,
+    "error": "HTTP Error 502: Bad Gateway"
+  },
+  {
+    "id": 2,
+    "query": "what is dharma",
+    "multi": true,
+    "routed": false,
+    "sub_questions": [
+      "what is dharma"
+    ],
+    "cited_in_text_with_fq": [
+      [
+        "4.7",
+        [
+          0
+        ]
+      ],
+      [
+        "4.8",
+        []
+      ],
+      [
+        "18.32",
+        [
+          0
+        ]
+      ],
+      [
+        "18.31",
+        [
+          0
+        ]
+      ]
+    ],
+    "all_cited_verses_with_fq": [
+      [
+        "4.7",
+        [
+          0
+        ]
+      ],
+      [
+        "18.32",
+        [
+          0
+        ]
+      ],
+      [
+        "18.31",
+        [
+          0
+        ]
+      ]
+    ],
+    "verified_count": 4,
+    "unverified_count": 0,
+    "uncited_count": 0,
+    "warnings": [],
+    "answer_preview": "**1. What is *dharma***  \n\n---  \n\n**Scriptural description**  \n\n“Whenever spirituality decays and materialism is rampant, then, O Arjuna, I reincarnate myself.” (BG 4.7)  \n\n“*To protect the righteous, to destroy the wicked, and to establish the kingdom of God, I am reborn from age to age.*” (BG 4.8)...",
+    "full_answer": "**1. What is *dharma***  \n\n---  \n\n**Scriptural description**  \n\n“Whenever spirituality decays and materialism is rampant, then, O Arjuna, I reincarnate myself.” (BG 4.7)  \n\n“*To protect the righteous, to destroy the wicked, and to establish the kingdom of God, I am reborn from age to age.*” (BG 4.8)  \n\n*Paraphrase*: In these verses Krishna explains that when the cosmic order (*dharma*) declines, the Divine incarnates to re‑establish it. The purpose of the incarnation is the protection of the good, the removal of the evil, and the restoration of *dharma* in the world.  \n\n---  \n\n**The nature of *dharma* and its mis‑recognition**  \n\n“That intellect, O Arjuna, which is enveloped in darkness and sees *Adharma* as *Dharma* and all things perverted, is Tamasic (dark).” (BG 18.32)  \n\n“That by which one wrongly understands *dharma* and *adharma*, and also what ought to be done and what ought not to be done—that intellect, O Arjuna, is rajasic (passionate).” (BG 18.31)  \n\n*Paraphrase*: The Gita warns that a mind clouded by ignorance may mistake unrighteousness (*adharma*) for righteousness (*dharma*). Such confusion is a sign of a tamasic or rajasic disposition, not of true understanding.  \n\n---  \n\n**Synthesis (my inference)**  \n\nFrom these passages, *dharma* can be understood as the principle of cosmic righteousness and duty that sustains the order of the universe. It is the standard that the Divine seeks to protect and re‑establish whenever it wanes. Correct perception of *dharma* requires a clear, illuminated intellect; when the mind is darkened, it misidentifies *adharma* as *dharma*, leading to moral confusion.  \n\nThus, in the Bhagavad Gita, *dharma* is not merely a social rule but the divine, orderly principle that underlies all righteous action and the well‑being of the world."
+  },
+  {
+    "id": 3,
+    "error": "HTTP Error 502: Bad Gateway"
+  },
+  {
+    "id": 4,
+    "query": "2.47",
+    "multi": true,
+    "routed": true,
+    "sub_questions": [],
+    "cited_in_text_with_fq": [
+      [
+        "2.47",
+        [
+          0
+        ]
+      ],
+      [
+        "2.48",
+        [
+          0
+        ]
+      ],
+      [
+        "2.49",
+        [
+          0
+        ]
+      ]
+    ],
+    "all_cited_verses_with_fq": [
+      [
+        "2.47",
+        [
+          0
+        ]
+      ]
+    ],
+    "verified_count": 0,
+    "unverified_count": 0,
+    "uncited_count": 8,
+    "warnings": [],
+    "answer_preview": "**Bhagavad Gita 2.47 – “Your right is only to work, but not to its results”**\n\nThe verse (BG 2.47) states:\n\n> *“karmanye vādhikāras te mā phaleṣhu kadāchana,  \n>  mā karma‑phala‑hetur bhūr mā te saṅgo ’stvakarmaṇi.”*  \n\nIn the translations supplied, this is rendered as:\n\n* “Your right is only to wor...",
+    "full_answer": "**Bhagavad Gita 2.47 – “Your right is only to work, but not to its results”**\n\nThe verse (BG 2.47) states:\n\n> *“karmanye vādhikāras te mā phaleṣhu kadāchana,  \n>  mā karma‑phala‑hetur bhūr mā te saṅgo ’stvakarmaṇi.”*  \n\nIn the translations supplied, this is rendered as:\n\n* “Your right is only to work, but not to its results; do not let the results of action be your motive, nor let your attachment be to inaction.” (Swami Sivananda)  \n* “Let your claim rest on action alone and never on the fruits; you should never be the cause of the fruits of action; let not your attachment be to inaction.” (Dr. S. Sankaranarayan)  \n* “But you have only the right to work, but none to the fruit of it. Let not the fruit of your action be your motive; nor be you enamored of inaction.” (Shri Purohit Swami)\n\n**Key points from the commentary (Swami Sivananda):**\n\n1. **Act without desire for the fruits.**  \n   When you perform actions, you must have *no* thirst for their results. If you cling to the rewards, you remain bound to the cycle of birth and death.\n\n2. **Bondage versus liberation.**  \n   Action motivated by expectation of fruit creates bondage. By contrast, an action performed without such desire purifies the heart, leads to knowledge of the Self, and ultimately frees one from samsara (the round of births and deaths).\n\n3. **Inaction is not the alternative.**  \n   The verse does **not** advocate abandoning work; it merely denies the right to claim the outcomes. The proper attitude is to act, but remain unattached to success or failure.\n\n**How the surrounding verses deepen the teaching**\n\n- **BG 2.48** (Yoga‑sthaḥ kuru karmāṇi …) expands the idea by linking *detachment* to *yoga*: “Abandoning attachment and established in Yoga, perform works, viewing success and failure with an even mind. Evenness of mind is called Yoga.” This shows that the unattached performance of duty is itself a form of yoga—*the yoga of equanimity*.\n\n- **BG 2.49** (dūreṇa hy‑avaraṁ karma …) places ordinary action, even when performed, as “far inferior to the yoga of wisdom.” It urges us to “take refuge in wisdom” and warns that those who act for the sake of reward are “wretched.” Thus, the ultimate guidance is to root action in the wisdom‑yoga of the Self, not in personal gain.\n\n**Practical reflection (grounded in the text)**  \n\nWhen faced with a task—whether a professional duty, a family responsibility, or a spiritual practice—remember the teaching of BG 2.47:\n\n- **Recognize your right** to *perform* the action.  \n- **Release the claim** to the *fruits* of that action.  \n- **Cultivate equanimity** (BG 2.48) so that success and failure affect you equally.  \n- **Seek the higher refuge** of wisdom (BG 2.49) rather than the fleeting lure of reward.\n\nBy aligning your conduct with this guidance, you move toward the purification of heart that the commentary describes, opening the path to self‑knowledge and liberation."
+  },
+  {
+    "id": 5,
+    "query": "What does Krishna say about anger and also about food",
+    "multi": true,
+    "routed": false,
+    "sub_questions": [
+      "What does Krishna teach about anger in the Bhagavad Gita?",
+      "What does Krishna teach about food and diet in the Bhagavad Gita?"
+    ],
+    "cited_in_text_with_fq": [
+      [
+        "5.23",
+        [
+          0
+        ]
+      ],
+      [
+        "3.37",
+        [
+          0
+        ]
+      ],
+      [
+        "2.63",
+        [
+          0
+        ]
+      ],
+      [
+        "2.64",
+        []
+      ],
+      [
+        "2.65",
+        []
+      ],
+      [
+        "17.7",
+        [
+          1
+        ]
+      ],
+      [
+        "17.8",
+        []
+      ],
+      [
+        "17.9",
+        []
+      ],
+      [
+        "6.16",
+        [
+          1
+        ]
+      ],
+      [
+        "6.17",
+        []
+      ],
+      [
+        "15.14",
+        [
+          1
+        ]
+      ]
+    ],
+    "all_cited_verses_with_fq": [
+      [
+        "5.23",
+        [
+          0
+        ]
+      ],
+      [
+        "3.37",
+        [
+          0
+        ]
+      ],
+      [
+        "2.18",
+        [
+          0
+        ]
+      ],
+      [
+        "13.20",
+        [
+          1
+        ]
+      ],
+      [
+        "17.7",
+        [
+          1
+        ]
+      ],
+      [
+        "17.8",
+        []
+      ],
+      [
+        "2.63",
+        [
+          0
+        ]
+      ],
+      [
+        "15.14",
+        [
+          1
+        ]
+      ],
+      [
+        "6.16",
+        [
+          1
+        ]
+      ]
+    ],
+    "verified_count": 9,
+    "unverified_count": 2,
+    "uncited_count": 0,
+    "warnings": [
+      "Unverified quote for BG 3.37: \"It is desire, it is wrath, born of the guna of rajas; it is a great devourer, a great source of sin. Know this to be the enemy here.\"",
+      "Unverified quote for BG 6.17: \"Yoga becomes a destroyer of sorrows for those who are temperate in food and recreation, temperate in their actions, and temperate in their sleep and wakefulness.\""
+    ],
+    "answer_preview": "**1. Krishna’s Teaching on Anger**\n\n| Verse | Quote (exactly as supplied) |\n|-------|-----------------------------|\n| BG 5.23 | “He who is able, even here, before being released from the body, to bear the impulse generated by desire and anger, he is a Yogin (competent for self‑realisation); he is th...",
+    "full_answer": "**1. Krishna’s Teaching on Anger**\n\n| Verse | Quote (exactly as supplied) |\n|-------|-----------------------------|\n| BG 5.23 | “He who is able, even here, before being released from the body, to bear the impulse generated by desire and anger, he is a Yogin (competent for self‑realisation); he is the happy man.” (BG 5.23) |\n| BG 3.37 | “It is desire, it is wrath, born of the guna of rajas; it is a great devourer, a great source of sin. Know this to be the enemy here.” (BG 3.37) |\n| BG 2.63 | “Anger leads to delusion, which causes the loss of memory; the loss of memory leads to the destruction of discrimination, and with the destruction of discrimination, one is lost.” (BG 2.63) |\n| BG 2.64 | “But he who goes through the sense‑objects with the senses free from love and hate, disciplined and controlled, attains serenity.” (BG 2.64) |\n| BG 2.65 | “In that serenity, all sorrow is lost; for in the case of the person with a serene mind, the Buddhi is quickly established.” (BG 2.65) |\n\n**Interpretation (my inference)**  \nKrishna describes anger (krodha) as a powerful, destructive force that originates in the mode of rajas. It acts as a “great devourer” that pulls the practitioner away from spiritual progress. When anger arises, it triggers a chain of mental deterioration—delusion, loss of memory, loss of discrimination—ultimately leading to spiritual ruin. Conversely, the yogi who can endure the impulse of desire and anger without being overwhelmed, and who moves among sense‑objects free from love (rāga) and hate (dveṣa), attains inner serenity (prasāda). In that serene state, sorrow disappears and the intellect (buddhi) stabilises.\n\n---\n\n**2. Krishna’s Teaching on Food and Diet**\n\n| Verse | Quote (exactly as supplied) |\n|-------|-----------------------------|\n| BG 17.7 | “Even the food that is dear to all is threefold; so too are sacrifices, austerities, and gifts. Listen to this distinction among them.” (BG 17.7) |\n| BG 17.8 | “Foods that promote longevity, intellectual alertness, strength, health, pleasure, and happiness, and those that are sweet, oily, substantial, and agreeable, are dear to sattvic men.” (BG 17.8) |\n| BG 17.9 | “Foods that are bitter, sour, salty, very hot, pungent, dry, and burning, producing pain, sorrow, and disease, are dear to one who has rajas.” (BG 17.9) |\n| BG 6.16 | “But, O Arjuna, Yoga is not for one who eats excessively, nor for one who does not eat at all; neither for one who habitually sleeps too long, nor for one who stays awake.” (BG 6.16) |\n| BG 6.17 | “Yoga becomes a destroyer of sorrows for those who are temperate in food and recreation, temperate in their actions, and temperate in their sleep and wakefulness.” (BG 6.17) |\n| BG 15.14 | “Being the digestive fire dwelling within the bodies of living creatures, and being in association with the upward and downward winds [of the body], I digest the four kinds of food.” (BG 15.14) |\n\n**Interpretation (my inference)**  \nKrishna (through the discourse of the Lord) classifies food into three qualities (sattva, rajas, tamas). Sattvic foods are pleasant, nourishing, and support clarity, health, and happiness; rajasic foods are sharp, hot, and tend to generate distress and disease; tamasic foods (not quoted here but implied by the threefold classification) would be those that promote inertia. Moreover, the practice of yoga demands moderation: neither overeating nor total abstinence, nor extreme patterns of sleep, are conducive to yoga. A balanced, temperate approach to eating, recreation, work, and rest cultivates the “destroyer of sorrows.” Finally, the divine fire (the Supreme) resides as the digestive fire within all beings, processing the four categories of food, indicating that proper digestion is part of the cosmic order."
+  },
+  {
+    "id": 6,
+    "query": "how can i keep my composure",
+    "multi": false,
+    "routed": false,
+    "sub_questions": [],
+    "cited_in_text_with_fq": [
+      [
+        "18.52",
+        []
+      ],
+      [
+        "18.53",
+        []
+      ],
+      [
+        "18.54",
+        []
+      ],
+      [
+        "6.13",
+        []
+      ],
+      [
+        "6.14",
+        []
+      ],
+      [
+        "6.12",
+        []
+      ],
+      [
+        "6.15",
+        []
+      ],
+      [
+        "18.51",
+        []
+      ],
+      [
+        "6.10",
+        []
+      ],
+      [
+        "6.11",
+        []
+      ]
+    ],
+    "all_cited_verses_with_fq": [
+      [
+        "18.52",
+        []
+      ],
+      [
+        "6.13",
+        []
+      ],
+      [
+        "18.51",
+        []
+      ],
+      [
+        "6.10",
+        []
+      ],
+      [
+        "6.15",
+        []
+      ]
+    ],
+    "verified_count": 2,
+    "unverified_count": 5,
+    "uncited_count": 1,
+    "warnings": [],
+    "answer_preview": "Keeping composure, according to the Bhagavad Gita, is cultivated through a disciplined inner attitude and a steady external posture. The text offers a step‑by‑step picture:\n\n1. **Create a quiet, solitary setting** – The yogi is advised to live “in solitude, being abstemious, having his body, mind an...",
+    "full_answer": "Keeping composure, according to the Bhagavad Gita, is cultivated through a disciplined inner attitude and a steady external posture. The text offers a step‑by‑step picture:\n\n1. **Create a quiet, solitary setting** – The yogi is advised to live “in solitude, being abstemious, having his body, mind and speech under perfect control” (BG 18.52).  By withdrawing from distracting company, the mind finds the space needed for steadiness.\n\n2. **Renounce the mental pollutants that disturb calm** – One must “relinquish egotism, violence, pride, desire, wrath and the sense of possession” (BG 18.53).  When these passions are let go, the heart becomes “unselfish and calm” (BG 18.53) and later “neither grieves nor craves” (BG 18.54).  This inner purification removes the primary sources of agitation.\n\n3. **Adopt a firm physical posture** – The Gita describes the yogic seat: “Holding the trunk, head and neck erect, motionless and steady… gazing at the tip of the nose” (BG 6.13).  A stable body supports a stable mind; any bodily restlessness quickly spreads to thoughts.\n\n4. **Cultivate a peaceful, fearless mind** – After the posture is set, the practitioner should be “peaceful‑hearted, free from fear, firm in the vow of celibacy, and with the mind fixed on Me” (BG 6.14).  Fearlessness and inner peace are essential ingredients of composure.\n\n5. **Keep the mind single‑pointed** – By “making the mind one‑pointed, subduing the activities of the mind and senses, and practicing yoga for self‑purification” (BG 6.12), the seeker prevents the mind from scattering to many objects.  Continuous, focused attention steadies emotional responses.\n\n6. **Maintain the steady mental focus continuously** – When the yogi “yokes his mind incessantly in this manner… he attains the peace that culminates in liberation” (BG 6.15).  The practice is not a one‑time act but a constant return to the same centered awareness.\n\n7. **Use pure intellect as the guiding faculty** – The verse on “pure intellect” (BG 18.51) urges the aspirant to “be guided always by pure reason, bravely restraining himself, renouncing the objects of sense and casting aside attachment and hatred.”  Reason, when kept clear, prevents emotional turbulence.\n\n**Putting it together**\n\n- **Set aside a clean, quiet place** (BG 6.10‑6.11) and sit with a firm, upright posture (BG 6.13).  \n- **Turn the mind inward**, making it one‑pointed (BG 6.12) and free from fear (BG 6.14).  \n- **Continuously remind yourself of the higher purpose**—the renunciation of ego, desire, anger and possession (BG 18.53) and the cultivation of dispassion (BG 18.52‑18.54).  \n- **Rely on pure intellect** to reject sensory temptations and emotional reactivity (BG 18.51).  \n\nBy following these interlocking steps—solitude, disciplined posture, fearless and peaceful mind, single‑pointed concentration, and the steady guidance of pure reason—the seeker develops the inner steadiness that the Gita calls composure."
+  }
+]

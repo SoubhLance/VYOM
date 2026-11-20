@@ -1,3 +1,9 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:ce8a3ba0c84f3fa5a6f9df845b83c3ebe8f41bddc4f30c7966d65c36628e536e
-size 296
+import httpx
+
+try:
+    with httpx.Client(timeout=10.0) as client:
+        resp = client.get("https://api.mistral.ai/v1/models", headers={"Authorization": "Bearer invalid_test_key"})
+        print("Status code:", resp.status_code)
+except Exception as e:
+    print("Exception:", type(e).__name__)
+

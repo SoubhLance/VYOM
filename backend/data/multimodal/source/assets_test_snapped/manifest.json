@@ -1,3 +1,422 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:a6f32717a0e1f0fa2c692a2aa9ad5d6553fd08e4640332826ed22e8d5fb64fe1
-size 8919
+{
+  "BG_04_01": {
+    "chapter": 4,
+    "verse": 1,
+    "audio": "audio/verses/bg_04_01.mp3",
+    "video": null,
+    "start": 2455.48,
+    "end": 2473.04,
+    "duration_sec": 17.56,
+    "flags": "CH_AMBIGUOUS"
+  },
+  "BG_04_02": {
+    "chapter": 4,
+    "verse": 2,
+    "audio": "audio/verses/bg_04_02.mp3",
+    "video": null,
+    "start": 2473.04,
+    "end": 2487.39,
+    "duration_sec": 14.35,
+    "flags": ""
+  },
+  "BG_04_03": {
+    "chapter": 4,
+    "verse": 3,
+    "audio": "audio/verses/bg_04_03.mp3",
+    "video": null,
+    "start": 2487.39,
+    "end": 2502.61,
+    "duration_sec": 15.22,
+    "flags": ""
+  },
+  "BG_04_04": {
+    "chapter": 4,
+    "verse": 4,
+    "audio": "audio/verses/bg_04_04.mp3",
+    "video": null,
+    "start": 2502.61,
+    "end": 2519.22,
+    "duration_sec": 16.61,
+    "flags": ""
+  },
+  "BG_04_05": {
+    "chapter": 4,
+    "verse": 5,
+    "audio": "audio/verses/bg_04_05.mp3",
+    "video": null,
+    "start": 2519.22,
+    "end": 2536.92,
+    "duration_sec": 17.7,
+    "flags": ""
+  },
+  "BG_04_06": {
+    "chapter": 4,
+    "verse": 6,
+    "audio": "audio/verses/bg_04_06.mp3",
+    "video": null,
+    "start": 2536.92,
+    "end": 2551.65,
+    "duration_sec": 14.73,
+    "flags": ""
+  },
+  "BG_04_07": {
+    "chapter": 4,
+    "verse": 7,
+    "audio": "audio/verses/bg_04_07.mp3",
+    "video": null,
+    "start": 2551.65,
+    "end": 2566.09,
+    "duration_sec": 14.44,
+    "flags": ""
+  },
+  "BG_04_08": {
+    "chapter": 4,
+    "verse": 8,
+    "audio": "audio/verses/bg_04_08.mp3",
+    "video": null,
+    "start": 2566.09,
+    "end": 2580.07,
+    "duration_sec": 13.98,
+    "flags": ""
+  },
+  "BG_04_09": {
+    "chapter": 4,
+    "verse": 9,
+    "audio": "audio/verses/bg_04_09.mp3",
+    "video": null,
+    "start": 2580.07,
+    "end": 2594.33,
+    "duration_sec": 14.26,
+    "flags": ""
+  },
+  "BG_04_10": {
+    "chapter": 4,
+    "verse": 10,
+    "audio": "audio/verses/bg_04_10.mp3",
+    "video": null,
+    "start": 2594.33,
+    "end": 2607.88,
+    "duration_sec": 13.55,
+    "flags": ""
+  },
+  "BG_04_11": {
+    "chapter": 4,
+    "verse": 11,
+    "audio": "audio/verses/bg_04_11.mp3",
+    "video": null,
+    "start": 2607.88,
+    "end": 2621.67,
+    "duration_sec": 13.79,
+    "flags": ""
+  },
+  "BG_04_12": {
+    "chapter": 4,
+    "verse": 12,
+    "audio": "audio/verses/bg_04_12.mp3",
+    "video": null,
+    "start": 2621.67,
+    "end": 2635.93,
+    "duration_sec": 14.26,
+    "flags": ""
+  },
+  "BG_04_13": {
+    "chapter": 4,
+    "verse": 13,
+    "audio": "audio/verses/bg_04_13.mp3",
+    "video": null,
+    "start": 2635.93,
+    "end": 2648.99,
+    "duration_sec": 13.06,
+    "flags": ""
+  },
+  "BG_04_14": {
+    "chapter": 4,
+    "verse": 14,
+    "audio": "audio/verses/bg_04_14.mp3",
+    "video": null,
+    "start": 2648.99,
+    "end": 2664.07,
+    "duration_sec": 15.08,
+    "flags": ""
+  },
+  "BG_04_15": {
+    "chapter": 4,
+    "verse": 15,
+    "audio": "audio/verses/bg_04_15.mp3",
+    "video": null,
+    "start": 2664.07,
+    "end": 2676.59,
+    "duration_sec": 12.52,
+    "flags": ""
+  },
+  "BG_04_16": {
+    "chapter": 4,
+    "verse": 16,
+    "audio": "audio/verses/bg_04_16.mp3",
+    "video": null,
+    "start": 2676.59,
+    "end": 2691.09,
+    "duration_sec": 14.5,
+    "flags": ""
+  },
+  "BG_04_17": {
+    "chapter": 4,
+    "verse": 17,
+    "audio": "audio/verses/bg_04_17.mp3",
+    "video": null,
+    "start": 2691.09,
+    "end": 2704.66,
+    "duration_sec": 13.57,
+    "flags": ""
+  },
+  "BG_04_18": {
+    "chapter": 4,
+    "verse": 18,
+    "audio": "audio/verses/bg_04_18.mp3",
+    "video": null,
+    "start": 2704.66,
+    "end": 2717.98,
+    "duration_sec": 13.32,
+    "flags": ""
+  },
+  "BG_04_19": {
+    "chapter": 4,
+    "verse": 19,
+    "audio": "audio/verses/bg_04_19.mp3",
+    "video": null,
+    "start": 2717.98,
+    "end": 2732.73,
+    "duration_sec": 14.75,
+    "flags": ""
+  },
+  "BG_04_20": {
+    "chapter": 4,
+    "verse": 20,
+    "audio": "audio/verses/bg_04_20.mp3",
+    "video": null,
+    "start": 2732.73,
+    "end": 2746.64,
+    "duration_sec": 13.91,
+    "flags": ""
+  },
+  "BG_04_21": {
+    "chapter": 4,
+    "verse": 21,
+    "audio": "audio/verses/bg_04_21.mp3",
+    "video": null,
+    "start": 2746.64,
+    "end": 2762.27,
+    "duration_sec": 15.63,
+    "flags": ""
+  },
+  "BG_04_22": {
+    "chapter": 4,
+    "verse": 22,
+    "audio": "audio/verses/bg_04_22.mp3",
+    "video": null,
+    "start": 2762.27,
+    "end": 2776.98,
+    "duration_sec": 14.71,
+    "flags": ""
+  },
+  "BG_04_23": {
+    "chapter": 4,
+    "verse": 23,
+    "audio": "audio/verses/bg_04_23.mp3",
+    "video": null,
+    "start": 2776.98,
+    "end": 2789.69,
+    "duration_sec": 12.71,
+    "flags": ""
+  },
+  "BG_04_24": {
+    "chapter": 4,
+    "verse": 24,
+    "audio": "audio/verses/bg_04_24.mp3",
+    "video": null,
+    "start": 2789.69,
+    "end": 2803.63,
+    "duration_sec": 13.94,
+    "flags": ""
+  },
+  "BG_04_25": {
+    "chapter": 4,
+    "verse": 25,
+    "audio": "audio/verses/bg_04_25.mp3",
+    "video": null,
+    "start": 2803.63,
+    "end": 2817.77,
+    "duration_sec": 14.14,
+    "flags": ""
+  },
+  "BG_04_26": {
+    "chapter": 4,
+    "verse": 26,
+    "audio": "audio/verses/bg_04_26.mp3",
+    "video": null,
+    "start": 2817.77,
+    "end": 2832.32,
+    "duration_sec": 14.55,
+    "flags": ""
+  },
+  "BG_04_27": {
+    "chapter": 4,
+    "verse": 27,
+    "audio": "audio/verses/bg_04_27.mp3",
+    "video": null,
+    "start": 2832.32,
+    "end": 2845.93,
+    "duration_sec": 13.61,
+    "flags": ""
+  },
+  "BG_04_28": {
+    "chapter": 4,
+    "verse": 28,
+    "audio": "audio/verses/bg_04_28.mp3",
+    "video": null,
+    "start": 2845.93,
+    "end": 2859.53,
+    "duration_sec": 13.6,
+    "flags": ""
+  },
+  "BG_04_29": {
+    "chapter": 4,
+    "verse": 29,
+    "audio": "audio/verses/bg_04_29.mp3",
+    "video": null,
+    "start": 2859.53,
+    "end": 2880.77,
+    "duration_sec": 21.24,
+    "flags": ""
+  },
+  "BG_04_30": {
+    "chapter": 4,
+    "verse": 30,
+    "audio": "audio/verses/bg_04_30.mp3",
+    "video": null,
+    "start": 2880.77,
+    "end": 2894.43,
+    "duration_sec": 13.66,
+    "flags": ""
+  },
+  "BG_04_31": {
+    "chapter": 4,
+    "verse": 31,
+    "audio": "audio/verses/bg_04_31.mp3",
+    "video": null,
+    "start": 2894.43,
+    "end": 2901.06,
+    "duration_sec": 6.63,
+    "flags": "SHORT"
+  },
+  "BG_04_32": {
+    "chapter": 4,
+    "verse": 32,
+    "audio": "audio/verses/bg_04_32.mp3",
+    "video": null,
+    "start": 2901.06,
+    "end": 2915.56,
+    "duration_sec": 14.5,
+    "flags": ""
+  },
+  "BG_04_33": {
+    "chapter": 4,
+    "verse": 33,
+    "audio": "audio/verses/bg_04_33.mp3",
+    "video": null,
+    "start": 2915.56,
+    "end": 2930.18,
+    "duration_sec": 14.62,
+    "flags": ""
+  },
+  "BG_04_34": {
+    "chapter": 4,
+    "verse": 34,
+    "audio": "audio/verses/bg_04_34.mp3",
+    "video": null,
+    "start": 2930.18,
+    "end": 2942.82,
+    "duration_sec": 12.64,
+    "flags": ""
+  },
+  "BG_04_35": {
+    "chapter": 4,
+    "verse": 35,
+    "audio": "audio/verses/bg_04_35.mp3",
+    "video": null,
+    "start": 2942.82,
+    "end": 2957.25,
+    "duration_sec": 14.43,
+    "flags": ""
+  },
+  "BG_04_36": {
+    "chapter": 4,
+    "verse": 36,
+    "audio": "audio/verses/bg_04_36.mp3",
+    "video": null,
+    "start": 2957.25,
+    "end": 2970.9,
+    "duration_sec": 13.65,
+    "flags": ""
+  },
+  "BG_04_37": {
+    "chapter": 4,
+    "verse": 37,
+    "audio": "audio/verses/bg_04_37.mp3",
+    "video": null,
+    "start": 2970.9,
+    "end": 2984.53,
+    "duration_sec": 13.63,
+    "flags": ""
+  },
+  "BG_04_38": {
+    "chapter": 4,
+    "verse": 38,
+    "audio": "audio/verses/bg_04_38.mp3",
+    "video": null,
+    "start": 2984.53,
+    "end": 2997.86,
+    "duration_sec": 13.33,
+    "flags": ""
+  },
+  "BG_04_39": {
+    "chapter": 4,
+    "verse": 39,
+    "audio": "audio/verses/bg_04_39.mp3",
+    "video": null,
+    "start": 2997.86,
+    "end": 3011.98,
+    "duration_sec": 14.12,
+    "flags": ""
+  },
+  "BG_04_40": {
+    "chapter": 4,
+    "verse": 40,
+    "audio": "audio/verses/bg_04_40.mp3",
+    "video": null,
+    "start": 3011.98,
+    "end": 3026.02,
+    "duration_sec": 14.04,
+    "flags": ""
+  },
+  "BG_04_41": {
+    "chapter": 4,
+    "verse": 41,
+    "audio": "audio/verses/bg_04_41.mp3",
+    "video": null,
+    "start": 3026.02,
+    "end": 3038.88,
+    "duration_sec": 12.86,
+    "flags": ""
+  },
+  "BG_04_42": {
+    "chapter": 4,
+    "verse": 42,
+    "audio": "audio/verses/bg_04_42.mp3",
+    "video": null,
+    "start": 3038.88,
+    "end": 3052.28,
+    "duration_sec": 13.4,
+    "flags": "CH_AMBIGUOUS"
+  }
+}

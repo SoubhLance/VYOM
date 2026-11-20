@@ -1,3 +1,15 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:51940d80a2602f49a0d0e0344162c66fddd5b4ce37fbcf5d09fb5007c5830fb3
-size 299
+[
+  {
+    "chapter": 1,
+    "verse": 34,
+    "old": "श्चशुराः",
+    "new": "श्वशुराः"
+  },
+  {
+    "chapter": 4,
+    "verse": 29,
+    "old": "प्राण प्राणेऽपानं",
+    "new": "प्राणं प्राणेऽपानं"
+  }
+]
+

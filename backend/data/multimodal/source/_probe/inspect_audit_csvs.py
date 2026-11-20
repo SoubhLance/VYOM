@@ -1,3 +1,24 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:560be6f5c6d9a6ff6a36ea016c3e14c77395ef509dbab58950b525fd06e85977
-size 572
+import csv
+import sys
+
+sys.stdout.reconfigure(encoding='utf-8')
+
+with open(
+    'backend/data/multimodal/source/_audit/alignment_report.csv',
+    encoding='utf-8',
+) as f:
+  reader = csv.DictReader(f)
+  print('alignment_report fieldnames:', reader.fieldnames)
+  for i, row in enumerate(reader):
+    if i < 3:
+      print(row)
+
+with open(
+    'backend/data/multimodal/source/_audit/ocr_blind.csv', encoding='utf-8'
+) as f:
+  reader = csv.DictReader(f)
+  print('\nocr_blind fieldnames:', reader.fieldnames)
+  for i, row in enumerate(reader):
+    if i < 3:
+      print(row)
+

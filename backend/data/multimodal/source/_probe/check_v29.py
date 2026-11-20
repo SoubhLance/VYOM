@@ -1,3 +1,11 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:a0feebebf11b91fd90b68928519a33f3d0d2b785cb3fdac0b5786e1981693117
-size 280
+import json
+import sys
+
+sys.stdout.reconfigure(encoding='utf-8')
+with open("backend/data/gita/4/verses.json", encoding="utf-8") as f:
+    verses = json.load(f)
+v29 = next(v for v in verses if v["verse_number"] == 29)
+print("v29 raw:")
+print(repr(v29["text"]))
+print(v29["text"])
+

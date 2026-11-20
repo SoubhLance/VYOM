@@ -140,3 +140,16 @@ backend/_scratch/
 frontend/public/translations/ 
 
 *.bak*
+
+# ── Regenerable media and indexes (2026-11-19) ─────────────────────────
+# Source video for the recitation clips (the clips themselves are tracked with Git LFS).
+backend/data/multimodal/source/lecture.mp4
+# Qdrant storage and embeddings are rebuilt from chunks.jsonl; see README "Rebuilding the index".
+qdrant_data/
+backend/qdrant_data/
+backend/data/processed/embeddings/
+*.npy
+# Debug frames and OCR models from the audio audit/probe work (not used by the app or tests).
+# OCR models: see README "Rebuild the clips from the source recording".
+backend/data/multimodal/**/*.png
+backend/data/multimodal/**/*.traineddata

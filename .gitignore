@@ -137,7 +137,6 @@ frontend/public/**/*.bak
 *.bak 
 *.bak* 
 backend/_scratch/ 
-frontend/public/translations/ 
 
 *.bak*
 

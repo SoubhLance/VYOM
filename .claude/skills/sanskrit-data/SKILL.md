@@ -6,7 +6,7 @@ description: Use whenever touching verse text, translations, shloka IDs or clip 
 # Sources of truth
 
 - `backend/data/processed/verses.jsonl` is canonical: 701 verses, IDs like "C.V". The backend is frozen unless the task says otherwise. After any text change the Qdrant index is stale until re-indexed.
-- Never hand-edit verse text in `verses.jsonl`. Add the fix to `SANSKRIT_CORRECTIONS` in `backend/ingestion/clean.py` (verse_id, old, new; it fails loudly if `old` is not found exactly once), then regenerate with `backend/_scratch/rebuild_chunks.py` or the raw pipeline and re-index (`indexing/embed.py`, `indexing/build_index.py`). `backend/_scratch/check_pipeline_repro.py` confirms the raw pipeline reproduces both files byte for byte.
+- Never hand-edit verse text in `verses.jsonl`. Add the fix to `SANSKRIT_CORRECTIONS` in `backend/ingestion/clean.py` (verse_id, old, new; it fails loudly if `old` is not found exactly once), then regenerate with `backend/_scratch/rebuild_chunks.py` or the raw pipeline and re-index (`indexing/embed.py`, `indexing/build_index.py`). `backend/scripts/check_pipeline_repro.py` confirms the raw pipeline reproduces both files byte for byte.
 - `backend/data/multimodal/verse_clips.json` is the only clip mapping. A verse can have 2 clips with `partial: true` (20 verses: 1.20–1.37, 4.29–4.31, 6.23–6.24). Clip file names follow the reciter's numbering, not verse IDs: `bg_01_37` is verse 1.38, and there is no `bg_01_47`.
 
 # Generated files: never hand-edit, regenerate with their script

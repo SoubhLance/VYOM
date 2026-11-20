@@ -145,7 +145,7 @@ Caveats:
 
 ## Hindi and Hinglish check
 
-Run locally with `backend/_scratch/hindi_check.py`; top 5 verses. Bold verses are on topic.
+Run locally with `backend/scripts/hindi_check.py`; top 5 verses. Bold verses are on topic.
 
 | Query | dense bge-m3 | dense bge-base |
 |---|---|---|

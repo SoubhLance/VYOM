@@ -55,8 +55,15 @@ recitation clips.
     `frontend/scripts/export_translations.py` from `verses.jsonl`.
 - `frontend/src/utils/speaker.ts` splits speaker lines ("अर्जुन उवाच") off
   for display as a small label. The data is not changed.
-- `backend/_scratch/` and the `*INTEGRATION_NOTES*.txt` files are historical.
-  Both integration patches are already applied in `main.py`.
+- `backend/scripts/` (tracked) holds the reusable utilities: `warm_cache.py`,
+  `failover_check.py`, `measure_ask.py`, `hindi_check.py`,
+  `concept_router_eval.py`, `hard_queries_latency.py`,
+  `check_pipeline_repro.py`, `verify_reindex.py`, `gemini_diag.py`,
+  `groq_models.py`. Keys come only from `backend/.env`. The two eval scripts
+  write their JSON results to `backend/_scratch/`.
+- `backend/_scratch/` (gitignored) and the `*INTEGRATION_NOTES*.txt` files are
+  historical: one-off patches, logs and outputs. Both integration patches are
+  already applied in `main.py`.
 
 ## Commands
 `venv/` is a conda environment, so the interpreter is `venv\python.exe`.
@@ -122,7 +129,7 @@ There is no `venv\Scripts\python.exe`.
   explain-each-verse prompt (system prompt ~2.2K tokens) a new question
   sends about 2.9-3.4K prompt tokens plus 250-600 completion tokens, so about
   2 new questions per minute; repeats come from the in-process answer cache
-  (`backend\_scratch\warm_cache.py` warms it for demos).
+  (`backend\scripts\warm_cache.py` warms it for demos).
 - Code is frozen as of 2026-11-20 (chat UI B1-B6 done): no prompt or
   retrieval changes without the owner's go-ahead.
 - `RecitationSanctuary.tsx` is not mounted anywhere.

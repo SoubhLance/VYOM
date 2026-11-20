@@ -103,7 +103,7 @@ npm run dev --prefix frontend
 **Before a demo,** warm the answer cache with the demo questions. It sends the exact chip queries, 25 s apart, to stay under Groq's rate limit:
 
 ```powershell
-.\venv\python.exe backend\_scratch\warm_cache.py
+.\venv\python.exe backend\scripts\warm_cache.py
 ```
 
 **Tests and build:**
@@ -138,8 +138,16 @@ Qdrant storage and embeddings are not in git. Rebuild them from the raw dataset 
 Check that the raw pipeline matches the processed files:
 
 ```powershell
-.\venv\python.exe -I backend\_scratch\check_pipeline_repro.py
+.\venv\python.exe -I backend\scripts\check_pipeline_repro.py
 ```
+
+Then, with the backend stopped (local Qdrant allows one process), check the index itself: point counts, the corrected verses' stored text and a local retrieval smoke test, with no LLM calls:
+
+```powershell
+.\venv\python.exe -I backend\scripts\verify_reindex.py
+```
+
+Other utilities live in `backend/scripts/` too: `failover_check.py` (provider fallback), `measure_ask.py` (real-request tokens and latency), `hindi_check.py`, `concept_router_eval.py`, `hard_queries_latency.py`, `gemini_diag.py` and `groq_models.py`. API keys are read only from `backend/.env`.
 
 ### Audio clips
 
@@ -211,7 +219,7 @@ yt-dlp -f "bv*+ba/b" --merge-output-format mp4 -o lecture.mp4 "https://www.youtu
 
 - **Quotes are verified; full faithfulness is not.** The quote verifier removes any quotation that isn't in the shown translations, and false-premise citations are stripped. But the explanation around a quote is the LLM's paraphrase and can drift from what the verse says. In multi-part answers, the "The Gita says nothing about X." sentence is not always placed at the start of the section that carries the premise.
 - **Small evaluation set.** 24 questions, 20 of them scored. Most differences between configurations fall inside their confidence intervals.
-- **Groq free-tier limits.** About 8K tokens per minute. A new question now sends about 2.9–3.4K prompt tokens plus 250–600 completion tokens, so roughly 2 new questions per minute; more than that falls back to the next provider. Repeated questions come from the in-process cache. For a demo, warm the cache first with `backend\_scratch\warm_cache.py` (see Running it).
+- **Groq free-tier limits.** About 8K tokens per minute. A new question now sends about 2.9–3.4K prompt tokens plus 250–600 completion tokens, so roughly 2 new questions per minute; more than that falls back to the next provider. Repeated questions come from the in-process cache. For a demo, warm the cache first with `backend\scripts\warm_cache.py` (see Running it).
 - **Hinglish in Latin script is not routed** to the multilingual embedder; only Devanagari is. Queries like "man ko shant kaise karein" retrieve poorly with either model.
 - **Inconsistent Sanskrit spelling in the dataset's transliteration.** For example, ś is written "sh", and svadharma appears as both "sva-dharma" and "swa-dharma". This limits exact-term search. The concept router works around it for 16 core terms.
 - **Hand-curated concept router.** It is curated by hand, so it covers only the terms in its map, and it is kept out of the benchmark numbers.

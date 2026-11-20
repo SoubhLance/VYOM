@@ -778,3 +778,29 @@ bge-base is clearly worse on Devanagari.
 - Checked: swipe → 1.2 with the scroll reset, vertical drag ignored, search → 2.47, Play → "Pause 2.47" (background music paused).
 - 768 and 1024+: spread side by side, unchanged.
 - No console errors. Build and lint pass. Frontend only; no new colours, fonts or animations.
+
+---
+
+## 2026-11-20 · Reusable scripts moved to tracked backend/scripts/
+
+**Change.**
+- Moved ten scripts from the gitignored `backend/_scratch/` to a new tracked `backend/scripts/`: `warm_cache`, `failover_check`, `measure_ask`, `hindi_check`, `concept_router_eval`, `hard_queries_latency`, `check_pipeline_repro`, `verify_reindex`, `gemini_diag`, `groq_models`.
+- `patch_*`, logs, JSON outputs and the rest stay in `_scratch` (still ignored).
+
+**Fixes.**
+- Hardcoded `D:\VYOM-AI\backend` paths in `failover_check`, `measure_ask`, `gemini_diag` and `groq_models` now resolve from the script's location.
+- Usage lines now say `backend\scripts\`.
+- The two eval scripts still write their JSON to `_scratch/`.
+- `verify_reindex.py` skips its backup comparisons when the backup is missing. `QdrantClient(path=...)` silently creates an empty database at a missing path, and the first run created an empty `qdrant_data.bak1`, which was removed.
+
+**Found.** The Qdrant backups `qdrant_data.bak1` and `qdrant_data.bak2` (the 2026-11-20 pre-reindex copy) were no longer on disk before this task. The `verses`, `chunks` and `embeddings` `.bak` files remain, so Qdrant can be rebuilt from them.
+
+**Secrets.** No `gsk_`, `AIza` or `api_key="…"` literals in the moved scripts; keys are read only from `backend/.env` or the environment.
+
+**Docs.**
+- README (warm cache, repro check, plus `verify_reindex` and the utilities list), CLAUDE.md, `docs/BENCHMARK.md` and the `sanskrit-data` skill now point to `scripts/`.
+- `.gitignore` no longer ignores `frontend/public/translations/`.
+
+**Result.**
+- Run from the new folder: `warm_cache.py --list` (chip map printed), `check_pipeline_repro.py` (byte-identical) and `verify_reindex.py` (1,569 points ×2, fixed verses 6/6, retrieval OK).
+- All ten compile. 407 passed, 5 skipped. Build and lint pass.

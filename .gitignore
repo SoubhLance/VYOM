@@ -153,3 +153,5 @@ backend/data/processed/embeddings/
 # OCR models: see README "Rebuild the clips from the source recording".
 backend/data/multimodal/**/*.png
 backend/data/multimodal/**/*.traineddata
+
+backend/data/multimodal/source/assets_test_*/
